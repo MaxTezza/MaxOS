@@ -1,0 +1,49 @@
+# Copy to config/settings.yaml and customize for your environment
+
+orchestrator:
+  provider: "anthropic"
+  model: "claude-3-5-sonnet"
+  temperature: 0.2
+  max_output_tokens: 1024
+  fallback_model: "llama3-8b-instruct"
+  memory_backend: "redis://localhost:6379/0"
+  audit_log_path: "/var/lib/maxos/audit.log"
+
+agents:
+  filesystem:
+    root_whitelist:
+      - "/home"
+      - "/srv"
+    require_confirmation_over_mb: 50
+  system:
+    allowed_units:
+      - "ssh.service"
+      - "docker.service"
+  developer:
+    default_stack: "fastapi-react"
+    git_provider: "github"
+  network:
+    allowed_interfaces:
+      - "wlan0"
+      - "eth0"
+
+llm:
+  anthropic_api_key: "set-me"
+  openai_api_key: "optional"
+  local_model_path: "/opt/models/llama3-8b.gguf"
+
+policy:
+  require_mfa: true
+  confirmation_thresholds:
+    destructive: true
+    filesystem: 100
+    systemd: true
+
+logging:
+  level: "INFO"
+  json: true
+  file: "logs/maxos.log"
+
+telemetry:
+  enabled: false
+  endpoint: "https://telemetry.tezzaworks.ai"

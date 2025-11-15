@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=67.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maxos"
+version = "0.1.0"
+description = "Experimental multi-agent interface layer for an AI-native Linux operating system"
+authors = [
+  {name = "TezzaWorks Automation Team"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "anthropic>=0.34",
+  "openai>=1.50",
+  "langchain>=0.3.0",
+  "pydantic>=2.8",
+  "pyyaml>=6.0",
+  "psutil>=5.9",
+  "aiofiles>=24.1",
+  "click>=8.1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.6",
+  "black>=24.8"
+]
+systemd = [
+  "dbus-python>=1.3"
+]
+
+[tool.setuptools]
+packages = ["max_os"]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "B", "I", "UP", "N"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
