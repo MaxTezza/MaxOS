@@ -61,3 +61,4 @@ audit.log
 .cache/
 *.pid
 *.sock
+.agent_notes/

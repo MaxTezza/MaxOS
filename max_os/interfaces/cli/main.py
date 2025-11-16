@@ -34,13 +34,52 @@ def main() -> None:
         type=Path,
         help="Write the conversation transcript to the given file path after running the command.",
     )
+    parser.add_argument(
+        "--show-personality",
+        action="store_true",
+        help="Show learned personality model and preferences.",
+    )
+    parser.add_argument(
+        "--export-personality",
+        type=Path,
+        help="Export personality model to JSON file.",
+    )
     args = parser.parse_args()
+
+    orchestrator = AIOperatingSystem()
+
+    # Handle personality inspection commands
+    if args.show_personality:
+        if orchestrator.enable_learning:
+            personality = orchestrator.personality.export_personality()
+            print("=== User Personality Model ===")
+            print("\nCommunication Style:")
+            for key, value in personality['communication_style'].items():
+                print(f"  {key}: {value:.2f}")
+            print("\nSkill Levels:")
+            for domain, level in personality['skill_levels'].items():
+                print(f"  {domain}: {level:.2f}")
+            print(f"\nRecent Interactions: {len(orchestrator.personality.get_recent_interactions())}")
+            return
+        else:
+            print("Learning system is disabled")
+            return
+
+    if args.export_personality:
+        if orchestrator.enable_learning:
+            import json
+            personality = orchestrator.personality.export_personality()
+            args.export_personality.write_text(json.dumps(personality, indent=2))
+            print(f"Personality exported to {args.export_personality}")
+            return
+        else:
+            print("Learning system is disabled")
+            return
 
     if not args.command:
         parser.error("Provide a command, e.g. 'scan Downloads for PSD files'.")
 
     command_text = " ".join(args.command)
-    orchestrator = AIOperatingSystem()
     response = orchestrator.handle_text(command_text)
 
     if args.json:

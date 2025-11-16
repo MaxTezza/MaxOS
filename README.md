@@ -8,12 +8,23 @@ Natural-language control plane for Linux that routes user intents to trusted aut
 - Provide opinionated guidance (architecture, security, deployment) so additional agents can be added without guesswork.
 
 ## Current Capabilities
-- Modular Python package with a central orchestrator and pluggable agents (filesystem, system health, developer helper, network bootstrapper).
-- Hybrid intent planner backed by Pydantic schemas plus a graceful path for future LLM-powered planning.
-- CLI prototype that parses intents and forwards them to the best-matching agent with structured responses, including a short-lived conversation memory buffer, JSON output mode, and transcript export.
-- Configuration loader for environment + YAML settings, including placeholders for API keys and policy controls, and an LLM adapter that falls back to local stubs when keys are missing.
-- Structured logging helper wired into the orchestrator so every request/response is audit-ready even without remote services.
-- Documentation set: `docs/ARCHITECTURE.md` (component matrix, Linux integration notes) and `docs/ROADMAP.md` (phased plan sourced from the master roadmap).
+- **Modular Python package** with a central orchestrator and pluggable agents (filesystem, system health, developer helper, network diagnostics).
+- **Four fully functional agents** with real system integration:
+  - **FileSystemAgent**: Search files by pattern/size, list directories, get file info with safety checks
+  - **SystemAgent**: Real-time CPU/memory/disk metrics, process listing, systemd service status, system health monitoring
+  - **DeveloperAgent**: Git operations (status, log, branches), repository management, project workflows
+  - **NetworkAgent**: Interface enumeration, ping/connectivity tests, DNS lookups, active connection monitoring
+- **Self-Learning Personality System** (NEW!):
+  - **UserPersonalityModel**: Learns your communication style (verbosity, technical level, formality) in real-time
+  - **PromptOptimizationFilter**: Adapts every response to match your preferences
+  - **Pattern Detection**: Identifies temporal patterns (what you do when) and sequential patterns (action A → action B)
+  - **Privacy-First**: All learning stored locally in SQLite (`~/.maxos/personality.db`), no cloud telemetry
+  - **Personality Inspection**: View learned preferences with `--show-personality` or export with `--export-personality`
+- **Hybrid intent planner** backed by Pydantic schemas plus a graceful path for future LLM-powered planning.
+- **CLI prototype** that parses intents and forwards them to the best-matching agent with structured responses, including a short-lived conversation memory buffer, JSON output mode, and transcript export.
+- **Configuration loader** for environment + YAML settings, including placeholders for API keys and policy controls, and an LLM adapter that falls back to local stubs when keys are missing.
+- **Structured logging** helper wired into the orchestrator so every request/response is audit-ready even without remote services.
+- **Documentation set**: `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/AGENT_IMPLEMENTATION.md`, `docs/PREDICTIVE_AGENT_ARCHITECTURE.md`, `docs/LEARNING_SYSTEM_DEMO.md`
 
 ## Getting Started
 ```bash
@@ -21,13 +32,40 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 cp config/settings.example.yaml config/settings.yaml
-python -m max_os.interfaces.cli.main --show-memory "scan Downloads for .psd files larger than 200MB"
+```
+
+**Example Commands**
+```bash
+# FileSystem operations
+python -m max_os.interfaces.cli.main "search Downloads for .psd files larger than 200MB"
+python -m max_os.interfaces.cli.main "list files in Documents"
+
+# System monitoring
+python -m max_os.interfaces.cli.main "show system health" --json | jq '{cpu, memory, disk}'
+python -m max_os.interfaces.cli.main "show running processes"
+python -m max_os.interfaces.cli.main "check docker service status"
+
+# Developer workflows
+python -m max_os.interfaces.cli.main "show git status"
+python -m max_os.interfaces.cli.main "show recent commits"
+python -m max_os.interfaces.cli.main "list git branches"
+
+# Network diagnostics
+python -m max_os.interfaces.cli.main "show network interfaces"
+python -m max_os.interfaces.cli.main "ping google.com"
+python -m max_os.interfaces.cli.main "dns lookup github.com"
+
+# Personality Learning (learns from every interaction!)
+python -m max_os.interfaces.cli.main --show-personality
+python -m max_os.interfaces.cli.main --export-personality ~/my_personality.json
 ```
 
 **CLI Flags**
 - `--json` prints only the payload (great for piping into `jq`).
 - `--show-memory` echoes the in-memory transcript for the current session.
 - `--dump-memory <path>` writes the transcript to disk for audits or follow-up prompts.
+- `--show-personality` displays your learned personality model and preferences.
+- `--export-personality <path>` exports personality model to JSON file.
 
 ## Repository Layout
 ```
