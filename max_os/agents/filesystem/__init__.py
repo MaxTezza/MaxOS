@@ -69,28 +69,38 @@ class FileSystemAgent:
         """Extract path from natural language text, defaulting to home."""
         text_lower = text.lower()
 
-        # Common patterns
+        # Common patterns - always safe as they're under home
         if "downloads" in text_lower:
-            return Path.home() / "Downloads"
+            candidate = Path.home() / "Downloads"
         elif "documents" in text_lower:
-            return Path.home() / "Documents"
+            candidate = Path.home() / "Documents"
         elif "desktop" in text_lower:
-            return Path.home() / "Desktop"
+            candidate = Path.home() / "Desktop"
         elif "home" in text_lower or "~" in text:
+            candidate = Path.home()
+        else:
+            # Try to extract explicit paths
+            candidate = None
+            for word in text.split():
+                if "/" in word:
+                    try:
+                        potential_path = Path(word.strip("'\""))
+                        # Validate before checking existence
+                        if self._is_path_allowed(potential_path) and potential_path.exists():
+                            candidate = potential_path
+                            break
+                    except (ValueError, OSError):
+                        pass
+
+        # Default to home if no candidate found or candidate invalid
+        if candidate is None:
             return Path.home()
 
-        # Try to extract explicit paths
-        for word in text.split():
-            if "/" in word:
-                try:
-                    path = Path(word.strip("'\""))
-                    if path.exists():
-                        return path
-                except (ValueError, OSError):
-                    pass
+        # Final safety check before returning
+        if not self._is_path_allowed(candidate):
+            return Path.home()
 
-        # Default to home
-        return Path.home()
+        return candidate
 
     def _handle_search(self, request: AgentRequest) -> AgentResponse:
         """Search for files matching patterns."""

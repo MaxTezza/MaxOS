@@ -57,96 +57,104 @@ class UserPersonalityModel:
         self._init_db()
         self._load_from_db()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Initialize SQLite database for persistent storage."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
 
-        # Interactions table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS interactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                user_input TEXT NOT NULL,
-                agent TEXT NOT NULL,
-                response_length INTEGER,
-                technical_complexity REAL,
-                success INTEGER,
-                context TEXT,
-                user_reaction TEXT
-            )
-        """)
-
-        # Personality state table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS personality_state (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )
-        """)
-
-        # Patterns table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS patterns (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pattern_type TEXT NOT NULL,
-                pattern_data TEXT NOT NULL,
-                confidence REAL,
-                occurrences INTEGER,
-                last_seen TEXT
-            )
-        """)
-
-        conn.commit()
-        conn.close()
-
-    def _load_from_db(self):
-        """Load personality state from database."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT key, value FROM personality_state")
-        rows = cursor.fetchall()
-
-        for key, value_json in rows:
-            value = json.loads(value_json)
-            if key == 'verbosity_preference':
-                self.verbosity_preference = value
-            elif key == 'technical_level':
-                self.technical_level = value
-            elif key == 'formality':
-                self.formality = value
-            elif key == 'emoji_tolerance':
-                self.emoji_tolerance = value
-            elif key == 'skill_levels':
-                self.skill_levels = value
-
-        conn.close()
-
-    def _save_to_db(self):
-        """Persist personality state to database."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        now = datetime.now().isoformat()
-
-        updates = [
-            ('verbosity_preference', self.verbosity_preference),
-            ('technical_level', self.technical_level),
-            ('formality', self.formality),
-            ('emoji_tolerance', self.emoji_tolerance),
-            ('skill_levels', self.skill_levels),
-        ]
-
-        for key, value in updates:
+            # Interactions table
             cursor.execute("""
-                INSERT OR REPLACE INTO personality_state (key, value, updated_at)
-                VALUES (?, ?, ?)
-            """, (key, json.dumps(value), now))
+                CREATE TABLE IF NOT EXISTS interactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    user_input TEXT NOT NULL,
+                    agent TEXT NOT NULL,
+                    response_length INTEGER,
+                    technical_complexity REAL,
+                    success INTEGER,
+                    context TEXT,
+                    user_reaction TEXT
+                )
+            """)
 
-        conn.commit()
-        conn.close()
+            # Personality state table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS personality_state (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+
+            # Patterns table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS patterns (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pattern_type TEXT NOT NULL,
+                    pattern_data TEXT NOT NULL,
+                    confidence REAL,
+                    occurrences INTEGER,
+                    last_seen TEXT
+                )
+            """)
+
+            conn.commit()
+
+    def _load_from_db(self) -> None:
+        """Load personality state from database."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+
+                cursor.execute("SELECT key, value FROM personality_state")
+                rows = cursor.fetchall()
+
+                for key, value_json in rows:
+                    try:
+                        value = json.loads(value_json)
+                        if key == 'verbosity_preference':
+                            self.verbosity_preference = value
+                        elif key == 'technical_level':
+                            self.technical_level = value
+                        elif key == 'formality':
+                            self.formality = value
+                        elif key == 'emoji_tolerance':
+                            self.emoji_tolerance = value
+                        elif key == 'skill_levels':
+                            self.skill_levels = value
+                    except (json.JSONDecodeError, KeyError) as e:
+                        # Log but don't crash - just use defaults
+                        pass
+        except sqlite3.Error as e:
+            # Database error - use defaults
+            pass
+
+    def _save_to_db(self) -> None:
+        """Persist personality state to database."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+
+                now = datetime.now().isoformat()
+
+                updates = [
+                    ('verbosity_preference', self.verbosity_preference),
+                    ('technical_level', self.technical_level),
+                    ('formality', self.formality),
+                    ('emoji_tolerance', self.emoji_tolerance),
+                    ('skill_levels', self.skill_levels),
+                ]
+
+                for key, value in updates:
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO personality_state (key, value, updated_at)
+                        VALUES (?, ?, ?)
+                    """, (key, json.dumps(value), now))
+
+                conn.commit()
+        except sqlite3.Error as e:
+            # Database error - silently fail for now
+            pass
 
     def observe(self, interaction: Interaction):
         """Learn from a single interaction."""
@@ -165,31 +173,34 @@ class UserPersonalityModel:
         # Persist changes
         self._save_to_db()
 
-    def _store_interaction(self, interaction: Interaction):
+    def _store_interaction(self, interaction: Interaction) -> None:
         """Store interaction in database."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-        cursor.execute("""
-            INSERT INTO interactions (
-                timestamp, user_input, agent, response_length,
-                technical_complexity, success, context, user_reaction
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            interaction.timestamp.isoformat(),
-            interaction.user_input,
-            interaction.agent,
-            interaction.response_length,
-            interaction.technical_complexity,
-            1 if interaction.success else 0,
-            json.dumps(interaction.context),
-            interaction.user_reaction
-        ))
+                cursor.execute("""
+                    INSERT INTO interactions (
+                        timestamp, user_input, agent, response_length,
+                        technical_complexity, success, context, user_reaction
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    interaction.timestamp.isoformat(),
+                    interaction.user_input,
+                    interaction.agent,
+                    interaction.response_length,
+                    interaction.technical_complexity,
+                    1 if interaction.success else 0,
+                    json.dumps(interaction.context),
+                    interaction.user_reaction
+                ))
 
-        conn.commit()
-        conn.close()
+                conn.commit()
+        except sqlite3.Error as e:
+            # Database error - silently fail for now
+            pass
 
-    def _update_communication_style(self, interaction: Interaction):
+    def _update_communication_style(self, interaction: Interaction) -> None:
         """Update communication style preferences based on interaction."""
         if interaction.user_reaction == 'positive':
             # Reinforce current style
@@ -216,7 +227,7 @@ class UserPersonalityModel:
         if any(word in interaction.user_input.lower() for word in ['how', 'why', 'explain']):
             self.verbosity_preference += self.learning_rate * 0.1
 
-    def _update_expertise(self, interaction: Interaction):
+    def _update_expertise(self, interaction: Interaction) -> None:
         """Update domain expertise levels based on interaction success."""
         domain = interaction.context.get('domain')
         if not domain or domain not in self.skill_levels:
@@ -231,52 +242,54 @@ class UserPersonalityModel:
             self.skill_levels[domain] -= self.learning_rate * 0.02
             self.skill_levels[domain] = max(0.0, self.skill_levels[domain])
 
-    def _detect_patterns(self):
+    def _detect_patterns(self) -> None:
         """Detect temporal and sequential patterns from interaction history."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-        # Detect temporal patterns (what user does at specific times)
-        cursor.execute("""
-            SELECT
-                strftime('%H', timestamp) as hour,
-                user_input,
-                COUNT(*) as frequency
-            FROM interactions
-            WHERE timestamp > datetime('now', '-30 days')
-            GROUP BY hour, user_input
-            HAVING frequency > 3
-            ORDER BY hour, frequency DESC
-        """)
+                # Detect temporal patterns (what user does at specific times)
+                cursor.execute("""
+                    SELECT
+                        strftime('%H', timestamp) as hour,
+                        user_input,
+                        COUNT(*) as frequency
+                    FROM interactions
+                    WHERE timestamp > datetime('now', '-30 days')
+                    GROUP BY hour, user_input
+                    HAVING frequency > 3
+                    ORDER BY hour, frequency DESC
+                """)
 
-        temporal_data = cursor.fetchall()
-        self.temporal_patterns = {}
-        for hour, task, freq in temporal_data:
-            if hour not in self.temporal_patterns:
-                self.temporal_patterns[hour] = []
-            self.temporal_patterns[hour].append({
-                'task': task,
-                'frequency': freq
-            })
+                temporal_data = cursor.fetchall()
+                self.temporal_patterns = {}
+                for hour, task, freq in temporal_data:
+                    if hour not in self.temporal_patterns:
+                        self.temporal_patterns[hour] = []
+                    self.temporal_patterns[hour].append({
+                        'task': task,
+                        'frequency': freq
+                    })
 
-        # Detect sequential patterns (action A followed by action B)
-        cursor.execute("""
-            SELECT
-                i1.user_input as action1,
-                i2.user_input as action2,
-                COUNT(*) as frequency
-            FROM interactions i1
-            JOIN interactions i2 ON i2.id = i1.id + 1
-            WHERE i1.timestamp > datetime('now', '-30 days')
-            GROUP BY action1, action2
-            HAVING frequency > 2
-            ORDER BY frequency DESC
-            LIMIT 50
-        """)
+                # Detect sequential patterns (action A followed by action B)
+                cursor.execute("""
+                    SELECT
+                        i1.user_input as action1,
+                        i2.user_input as action2,
+                        COUNT(*) as frequency
+                    FROM interactions i1
+                    JOIN interactions i2 ON i2.id = i1.id + 1
+                    WHERE i1.timestamp > datetime('now', '-30 days')
+                    GROUP BY action1, action2
+                    HAVING frequency > 2
+                    ORDER BY frequency DESC
+                    LIMIT 50
+                """)
 
-        self.sequential_patterns = cursor.fetchall()
-
-        conn.close()
+                self.sequential_patterns = cursor.fetchall()
+        except sqlite3.Error as e:
+            # Database error - keep existing patterns
+            pass
 
     def predict_next_need(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Predict what user will need next based on context."""
@@ -347,26 +360,29 @@ class UserPersonalityModel:
 
     def get_recent_interactions(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent interaction history."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT timestamp, user_input, agent, success, user_reaction
-            FROM interactions
-            ORDER BY timestamp DESC
-            LIMIT ?
-        """, (limit,))
+                cursor.execute("""
+                    SELECT timestamp, user_input, agent, success, user_reaction
+                    FROM interactions
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                """, (limit,))
 
-        rows = cursor.fetchall()
-        conn.close()
+                rows = cursor.fetchall()
 
-        return [
-            {
-                'timestamp': row[0],
-                'input': row[1],
-                'agent': row[2],
-                'success': bool(row[3]),
-                'reaction': row[4]
-            }
-            for row in rows
-        ]
+            return [
+                {
+                    'timestamp': row[0],
+                    'input': row[1],
+                    'agent': row[2],
+                    'success': bool(row[3]),
+                    'reaction': row[4]
+                }
+                for row in rows
+            ]
+        except sqlite3.Error as e:
+            # Database error - return empty list
+            return []
