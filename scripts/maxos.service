@@ -1,0 +1,13 @@
+[Unit]
+Description=MaxOS API Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/mtez/ai-os/.venv/bin/uvicorn max_os.interfaces.api.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+User=mtez
+Group=mtez
+
+[Install]
+WantedBy=multi-user.target
