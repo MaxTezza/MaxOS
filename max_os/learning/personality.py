@@ -2,32 +2,45 @@
 from __future__ import annotations
 
 import json
-import sqlite3
-from dataclasses import dataclass, asdict
+import structlog
+import sqlite3 # Added for database operations
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from dataclasses import dataclass # Import dataclass
+from max_os.learning.context_engine import ContextSignals
 
 
 @dataclass
 class Interaction:
-    """Single user interaction record."""
     timestamp: datetime
     user_input: str
     agent: str
     response_length: int
-    technical_complexity: float  # 0-1 scale
+    technical_complexity: float
     success: bool
     context: Dict[str, Any]
-    user_reaction: Optional[str] = None  # 'positive', 'negative', 'neutral'
+    user_reaction: Optional[str] = None  # e.g., "positive", "negative", "neutral"
 
 
 class UserPersonalityModel:
-    """Learns and tracks user personality, preferences, and patterns."""
+    """
+    Models the user's personality, preferences, and predicts next needs.
+    """
 
-    def __init__(self, db_path: Path | None = None):
-        self.db_path = db_path or Path.home() / ".maxos" / "personality.db"
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, db_path: Optional[Path] = None):
+        self.interaction_history: List[Interaction] = []
+        self.verbosity_preference: float = 0.5  # 0.0 (terse) to 1.0 (verbose)
+        self.technical_level: float = 0.5  # 0.0 (novice) to 1.0 (expert)
+        self.logger = structlog.get_logger("max_os.learning.personality")
+
+        # Set db_path with default fallback
+        if db_path is None:
+            self.db_path = Path.home() / ".maxos" / "personality.db"
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            self.db_path = Path(db_path)
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Communication style preferences (0.0 - 1.0)
         self.verbosity_preference = 0.5  # 0=terse, 1=verbose
@@ -292,44 +305,120 @@ class UserPersonalityModel:
             pass
 
     def predict_next_need(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Predict what user will need next based on context."""
-        predictions = []
+        """Predict what user will need next based on context and extracted features."""
+        predictions: List[Dict[str, Any]] = []
+        features = self._extract_features(context)
+
+        def add_prediction(task: str, confidence: float, reason: str, ptype: str) -> None:
+            if confidence <= self.confidence_threshold:
+                return
+            entry = {
+                'task': task,
+                'confidence': round(confidence, 3),
+                'reason': reason,
+                'type': ptype,
+            }
+            for idx, existing in enumerate(predictions):
+                if existing['task'] == task:
+                    if confidence > existing['confidence']:
+                        predictions[idx] = entry
+                    return
+            predictions.append(entry)
 
         # Time-based predictions
-        current_hour = datetime.now().hour
+        current_hour = features['hour_of_day']
         if str(current_hour) in self.temporal_patterns:
             for pattern in self.temporal_patterns[str(current_hour)][:3]:  # Top 3
-                predictions.append({
-                    'task': pattern['task'],
-                    'confidence': min(0.9, pattern['frequency'] / 10),
-                    'reason': f'You usually do this around {current_hour}:00',
-                    'type': 'temporal'
-                })
+                add_prediction(
+                    pattern['task'],
+                    min(0.9, pattern['frequency'] / 10),
+                    f'You usually do this around {current_hour}:00',
+                    'temporal'
+                )
 
         # Sequential predictions (based on last action)
-        last_action = context.get('last_action')
-        if last_action:
-            for action1, action2, freq in self.sequential_patterns:
-                if action1.lower() in last_action.lower():
-                    predictions.append({
-                        'task': action2,
-                        'confidence': min(0.95, freq / 10),
-                        'reason': f'You usually do this after "{action1}"',
-                        'type': 'sequential'
-                    })
+        if features['last_action_is_git_status']:
+            # Example: if last action was 'show git status', suggest 'commit changes'
+            add_prediction(
+                'commit changes',
+                0.75,
+                'You just checked git status, likely to commit',
+                'sequential'
+            )
+        # Add more sequential predictions based on features['last_action_is_commit'] etc.
 
-        # Context-based predictions
-        if context.get('git_status') == 'modified':
-            predictions.append({
-                'task': 'commit changes',
-                'confidence': 0.75,
-                'reason': 'You have uncommitted changes',
-                'type': 'context'
-            })
+        # Context-based predictions using features
+        if features['git_dirty_count'] > 0:
+            add_prediction(
+                'commit changes',
+                min(0.9, 0.7 + 0.05 * features['git_dirty_count']),
+                f'{features["git_dirty_count"]} repo(s) have uncommitted changes',
+                'context'
+            )
+        if features['git_has_staged']:
+            add_prediction(
+                'push commits',
+                0.82,
+                "There are staged changes ready to push",
+                'context'
+            )
+
+        if features['active_app_is_ide']:
+            add_prediction(
+                'show git status',
+                0.74,
+                'Active window looks like a coding session',
+                'context'
+            )
+
+        if features['recent_python_file_modified']:
+            add_prediction(
+                'run tests',
+                0.78,
+                'Recent Python files were modified',
+                'context'
+            )
+
+        if features['new_downloads_recently']:
+            add_prediction(
+                'organize downloads',
+                0.72,
+                'New files landed in Downloads recently',
+                'context'
+            )
+
+        if features['cpu_percent'] > 80:
+            add_prediction(
+                'show system health',
+                min(0.9, 0.7 + (features['cpu_percent'] - 80) / 100),
+                f'CPU load is high at {features["cpu_percent"]:.0f}%',
+                'context'
+            )
+        if features['memory_percent'] > 80:
+            add_prediction(
+                'show system health',
+                min(0.88, 0.68 + (features['memory_percent'] - 80) / 120),
+                f'Memory usage is high at {features["memory_percent"]:.0f}%',
+                'context'
+            )
 
         # Sort by confidence and return top predictions
         predictions.sort(key=lambda x: x['confidence'], reverse=True)
-        return [p for p in predictions if p['confidence'] > self.confidence_threshold][:5]
+        self.logger.debug("Generated predictions: %s", predictions)
+        return predictions[:5]
+
+    @staticmethod
+    def _is_recent_timestamp(timestamp: Optional[str], minutes: int = 10) -> bool:
+        if not timestamp:
+            return False
+        try:
+            normalized = timestamp.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            return False
+        if parsed.tzinfo:
+            parsed = parsed.astimezone().replace(tzinfo=None)
+        return (datetime.now() - parsed) <= timedelta(minutes=minutes)
 
     def get_communication_params(self) -> Dict[str, float]:
         """Get current communication style parameters."""
@@ -386,3 +475,65 @@ class UserPersonalityModel:
         except sqlite3.Error as e:
             # Database error - return empty list
             return []
+
+    def get_score(self) -> float:
+        """Returns a simple aggregated score representing the user's overall personality state."""
+        # This is a placeholder. A more sophisticated score would involve
+        # weighted averages, recent interaction sentiment, etc.
+        return (
+            self.verbosity_preference
+            + self.technical_level
+            + self.formality
+            + (1 - self.emoji_tolerance) # Lower tolerance means higher score for "seriousness"
+        ) / 4.0
+
+    def _extract_features(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extracts a structured feature vector from the current context and personality state.
+        """
+        features = {}
+        now = datetime.now()
+
+        # Time-based features
+        features['hour_of_day'] = now.hour
+        features['day_of_week'] = now.weekday() # Monday is 0, Sunday is 6
+        features['is_weekend'] = 1 if now.weekday() >= 5 else 0
+
+        # Personality traits
+        features['verbosity_preference'] = self.verbosity_preference
+        features['technical_level'] = self.technical_level
+        features['formality'] = self.formality
+        features['emoji_tolerance'] = self.emoji_tolerance
+
+        # Context signals
+        signals = context.get('signals', {})
+
+        # Git status
+        git_info = signals.get('git', {})
+        features['git_dirty_count'] = git_info.get('dirty_count', 0)
+        features['git_has_staged'] = 1 if any(repo.get('staged') for repo in git_info.get('repos', [])) else 0
+
+        # Handle simplified git_status context (for tests or simplified usage)
+        if 'git_status' in context and context['git_status'] == 'modified':
+            features['git_dirty_count'] = max(features['git_dirty_count'], 1)
+
+        # Active application
+        active_window = (signals.get('applications', {}).get('active_window') or '').lower()
+        features['active_app_is_ide'] = 1 if any(keyword in active_window for keyword in ['code', 'pycharm', 'vim', 'idea', 'studio', 'sublime']) else 0
+        features['active_app_is_browser'] = 1 if any(keyword in active_window for keyword in ['chrome', 'firefox', 'edge', 'brave']) else 0
+
+        # Filesystem activity
+        filesystem_info = signals.get('filesystem', {})
+        features['recent_python_file_modified'] = 1 if any(event.get('src_path', '').endswith('.py') for event in filesystem_info.get('recent_events', [])) else 0
+        features['new_downloads_recently'] = 1 if (filesystem_info.get('downloads') and self._is_recent_timestamp(filesystem_info['downloads'][0].get('modified'))) else 0
+
+        # System metrics
+        system_metrics = signals.get('system', {})
+        features['cpu_percent'] = (system_metrics.get('cpu') or {}).get('percent', 0.0)
+        features['memory_percent'] = (system_metrics.get('memory') or {}).get('percent', 0.0)
+
+        # Last action
+        features['last_action_is_git_status'] = 1 if context.get('last_action', '').lower() == 'show git status' else 0
+        features['last_action_is_commit'] = 1 if 'commit' in context.get('last_action', '').lower() else 0
+
+        return features

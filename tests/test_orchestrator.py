@@ -1,9 +1,14 @@
+from unittest.mock import patch
+import pytest
+import fakeredis
 from max_os.core.orchestrator import AIOperatingSystem
 
 
-def test_filesystem_routing():
+@pytest.mark.asyncio
+@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+async def test_filesystem_routing(mock_redis):
     orchestrator = AIOperatingSystem()
-    response = orchestrator.handle_text("Please archive the Reports folder")
+    response = await orchestrator.handle_text("Please archive the Reports folder")
     assert response.agent == "filesystem"
     # Agent should handle the request (not be unhandled)
     assert response.status in {"success", "error", "not_implemented"}
@@ -11,9 +16,11 @@ def test_filesystem_routing():
     assert response.payload.get("intent", "").startswith("file.")
 
 
-def test_developer_routing():
+@pytest.mark.asyncio
+@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+async def test_developer_routing(mock_redis):
     orchestrator = AIOperatingSystem()
-    response = orchestrator.handle_text("Create a FastAPI project and push to git")
+    response = await orchestrator.handle_text("Create a FastAPI project and push to git")
     assert response.agent == "developer"
     # Developer agent defaults to git status for generic dev requests
     assert response.status in {"success", "error"}
@@ -21,7 +28,9 @@ def test_developer_routing():
     assert "branch" in response.payload
 
 
-def test_default_fallback():
+@pytest.mark.asyncio
+@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+async def test_default_fallback(mock_redis):
     orchestrator = AIOperatingSystem()
-    response = orchestrator.handle_text("What's the weather?")
+    response = await orchestrator.handle_text("What's the weather?")
     assert response.agent in {"system", "orchestrator"}
