@@ -1,11 +1,18 @@
 """System agent for health checks and service control."""
 from __future__ import annotations
 
-import subprocess
+import asyncio
 from datetime import datetime
 from typing import Dict
 
 import psutil
+
+try:
+    from dbus_next.aio import MessageBus
+    from dbus_next.constants import BusType
+except ImportError:  # pragma: no cover - optional dependency
+    MessageBus = None
+    BusType = None
 
 from max_os.agents.base import AgentRequest, AgentResponse
 
@@ -18,13 +25,19 @@ class SystemAgent:
 
     def __init__(self, config: Dict[str, object] | None = None) -> None:
         self.config = config or {}
+        self.bus = None
+
+    async def _get_bus(self):
+        if not self.bus and MessageBus and BusType:
+            self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+        return self.bus
 
     def can_handle(self, request: AgentRequest) -> bool:
         return request.intent.startswith("system.") or any(
             keyword in request.text.lower() for keyword in self.KEYWORDS
         )
 
-    def handle(self, request: AgentRequest) -> AgentResponse:
+    async def handle(self, request: AgentRequest) -> AgentResponse:
         text_lower = request.text.lower()
 
         # Route to specific handlers
@@ -33,7 +46,7 @@ class SystemAgent:
         elif any(word in text_lower for word in ["process", "processes", "ps"]):
             return self._handle_processes(request)
         elif "service" in text_lower:
-            return self._handle_service(request)
+            return await self._handle_service(request)
         elif any(word in text_lower for word in ["disk", "storage", "space"]):
             return self._handle_disk(request)
         else:
@@ -139,18 +152,17 @@ class SystemAgent:
                 payload={"error": str(e)},
             )
 
-    def _handle_service(self, request: AgentRequest) -> AgentResponse:
-        """Check systemd service status."""
+    async def _handle_service(self, request: AgentRequest) -> AgentResponse:
+        """Check systemd service status using D-Bus."""
         text_lower = request.text.lower()
 
         # Try to extract service name from text
-        # Common patterns: "check docker service", "status of nginx", etc.
         common_services = ["docker", "nginx", "apache2", "ssh", "postgresql", "mysql", "redis"]
         service_name = None
 
         for service in common_services:
             if service in text_lower:
-                service_name = service
+                service_name = f"{service}.service"
                 break
 
         if not service_name:
@@ -161,23 +173,18 @@ class SystemAgent:
                 payload={"common_services": common_services},
             )
 
-        # Check if service exists and get status
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service_name],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            is_active = result.stdout.strip()
+            bus = await self._get_bus()
+            introspection = await bus.introspect('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+            proxy = bus.get_proxy_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1', introspection)
+            manager = proxy.get_interface('org.freedesktop.systemd1.Manager')
+            unit_path = await manager.call_get_unit(service_name)
+            unit_introspection = await bus.introspect('org.freedesktop.systemd1', unit_path)
+            unit_proxy = bus.get_proxy_object('org.freedesktop.systemd1', unit_path, unit_introspection)
+            unit_properties = unit_proxy.get_interface('org.freedesktop.DBus.Properties')
 
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service_name],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            is_enabled = result.stdout.strip()
+            active_state = await unit_properties.call_get('org.freedesktop.systemd1.Unit', 'ActiveState')
+            load_state = await unit_properties.call_get('org.freedesktop.systemd1.Unit', 'LoadState')
 
             return AgentResponse(
                 agent=self.name,
@@ -185,16 +192,9 @@ class SystemAgent:
                 message=f"Service {service_name} status retrieved",
                 payload={
                     "service": service_name,
-                    "active": is_active,
-                    "enabled": is_enabled,
+                    "active": active_state.value,
+                    "enabled": load_state.value,
                 },
-            )
-        except subprocess.TimeoutExpired:
-            return AgentResponse(
-                agent=self.name,
-                status="error",
-                message=f"Timeout checking service {service_name}",
-                payload={"service": service_name},
             )
         except Exception as e:
             return AgentResponse(

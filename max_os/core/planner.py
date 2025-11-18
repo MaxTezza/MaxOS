@@ -40,6 +40,9 @@ class IntentPlanner:
     @staticmethod
     def _default_rules() -> List[KeywordRule]:
         return [
+            KeywordRule("evolve", "agent.evolver", "Self-improvement workflows", "keyword"),
+            KeywordRule("agent evolver", "agent.evolver", "Self-improvement workflows", "keyword"),
+            KeywordRule("self-improve", "agent.evolver", "Self-improvement workflows", "keyword"),
             KeywordRule("file", "file.manage", "Handle filesystem operations", "keyword"),
             KeywordRule("folder", "file.organize", "Organize directories", "keyword"),
             KeywordRule("archive", "file.archive", "Archive or compress files", "keyword"),
@@ -51,4 +54,12 @@ class IntentPlanner:
             KeywordRule("wifi", "network.manage", "Manage Wi-Fi connections", "keyword"),
             KeywordRule("vpn", "network.vpn", "Manage VPN connections", "keyword"),
             KeywordRule("firewall", "network.firewall", "Adjust firewall", "keyword"),
+            KeywordRule("information", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("know", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("docs", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("documentation", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("answer", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("explain", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("summarize", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
+            KeywordRule("find out", "knowledge.query", "Retrieve information from knowledge base", "keyword"),
         ]

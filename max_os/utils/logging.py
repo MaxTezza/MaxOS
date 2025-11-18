@@ -6,19 +6,11 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
+import structlog
+from structlog.processors import JSONRenderer, format_exc_info, StackInfoRenderer, TimeStamper, UnicodeDecoder
+from structlog.dev import ConsoleRenderer
+
 from max_os.utils.config import Settings
-
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # pragma: no cover - trivial
-        payload: Dict[str, Any] = {
-            "level": record.levelname,
-            "message": record.getMessage(),
-            "name": record.name,
-        }
-        if record.exc_info:
-            payload["exception"] = self.formatException(record.exc_info)
-        return json.dumps(payload)
 
 
 def configure_logging(settings: Settings) -> None:
@@ -28,26 +20,57 @@ def configure_logging(settings: Settings) -> None:
     json_mode = bool(config.get("json", False))
     log_file = config.get("file")
 
-    if logging.getLogger().handlers:
-        return
+    # Configure structlog processors
+    shared_processors = [
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        TimeStamper(fmt="iso"),
+        structlog.processors.dict_tracebacks,
+        StackInfoRenderer(),
+        format_exc_info,
+        UnicodeDecoder(),
+    ]
 
-    handlers = []
+    if json_mode:
+        # For JSON output, add JSONRenderer
+        processors = shared_processors + [JSONRenderer()]
+    else:
+        # For console output, add ConsoleRenderer
+        processors = shared_processors + [ConsoleRenderer()]
+
+    # Configure standard logging
+    logging.basicConfig(level=level, handlers=[]) # Clear existing handlers
+    
+    # Add stream handler
     stream_handler = logging.StreamHandler()
-    handlers.append(stream_handler)
+    stream_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
+        processor=structlog.dev.ConsoleRenderer() if not json_mode else structlog.processors.JSONRenderer(),
+        foreign_pre_chain=shared_processors,
+    ))
+    logging.getLogger().addHandler(stream_handler)
 
+    # Add file handler if log_file is specified
     if log_file:
         try:
             log_path = Path(log_file)
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            handlers.append(logging.FileHandler(log_path))
+            file_handler = logging.FileHandler(log_path)
+            file_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
+                processor=structlog.processors.JSONRenderer(), # Always JSON for file logs
+                foreign_pre_chain=shared_processors,
+            ))
+            logging.getLogger().addHandler(file_handler)
         except OSError:
             # Fall back to stdout-only logging when the path is not writable
             pass
 
-    formatter: logging.Formatter = JSONFormatter() if json_mode else logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    # Configure structlog
+    structlog.configure(
+        processors=processors,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
     )
-    for handler in handlers:
-        handler.setFormatter(formatter)
 
-    logging.basicConfig(level=level, handlers=handlers)
+    # Set specific logger levels for debugging
+

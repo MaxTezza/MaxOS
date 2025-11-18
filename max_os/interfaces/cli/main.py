@@ -5,6 +5,8 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+import asyncio
+import time
 
 from max_os.core.orchestrator import AIOperatingSystem
 
@@ -16,7 +18,7 @@ def format_payload(payload: Any) -> str:
         return str(payload)
 
 
-def main() -> None:
+async def async_main() -> None:
     parser = argparse.ArgumentParser(description="MaxOS CLI prototype")
     parser.add_argument(
         "command",
@@ -43,6 +45,16 @@ def main() -> None:
         "--export-personality",
         type=Path,
         help="Export personality model to JSON file.",
+    )
+    parser.add_argument(
+        "--show-context",
+        action="store_true",
+        help="Print the latest context signals captured by the orchestrator.",
+    )
+    parser.add_argument(
+        "--show-learning-metrics",
+        action="store_true",
+        help="Print recent real-time learning batch metrics.",
     )
     args = parser.parse_args()
 
@@ -80,7 +92,7 @@ def main() -> None:
         parser.error("Provide a command, e.g. 'scan Downloads for PSD files'.")
 
     command_text = " ".join(args.command)
-    response = orchestrator.handle_text(command_text)
+    response = await orchestrator.handle_text(command_text)
 
     if args.json:
         print(format_payload(response.payload or {}))
@@ -97,9 +109,29 @@ def main() -> None:
         for item in orchestrator.memory.history:
             print(f"[{item.role}] {item.content}")
 
+    if args.show_context:
+        signals = orchestrator.get_last_context().get("signals")
+        print("\nContext Signals:")
+        if signals:
+            print(format_payload(signals))
+        else:
+            print("No context signals captured for this interaction.")
+
+    if args.show_learning_metrics:
+        metrics = orchestrator.get_learning_metrics()
+        print("\nLearning Metrics:")
+        if metrics:
+            print(format_payload(metrics))
+        else:
+            print("No learning batches processed yet.")
+
     if args.dump_memory:
         orchestrator.memory.dump(args.dump_memory)
         print(f"Transcript saved to {args.dump_memory}")
+
+
+def main() -> None:
+    asyncio.run(async_main())
 
 
 if __name__ == "__main__":

@@ -1,6 +1,11 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+from collections import deque
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Deque, Dict, List, Optional
+
 import structlog
+
 from max_os.core.registry import AGENT_REGISTRY, AgentRegistry
 from max_os.core.planner import Intent, IntentPlanner
 from max_os.learning.context_engine import ContextAwarenessEngine
@@ -8,6 +13,18 @@ from max_os.learning.personality import UserPersonalityModel
 from max_os.agents.base import AgentRequest
 
 logger = structlog.get_logger("max_os.learning.prediction")
+
+
+@dataclass
+class PredictionRecord:
+    """Tracks lifecycle of a predicted intent."""
+
+    intent: str
+    task: str
+    confidence: float
+    timestamp: datetime
+    status: str = "pending"  # pending|hit|miss|proactive
+    proactive: bool = False
 
 
 class PredictiveAgentSpawner:
@@ -21,12 +38,21 @@ class PredictiveAgentSpawner:
         context_engine: ContextAwarenessEngine | None,
         planner: IntentPlanner | None = None,
         registry: AgentRegistry | None = None,
+        prediction_ttl_seconds: int = 900,
+        history_limit: int = 200,
     ):
         self.personality = personality
         self.context_engine = context_engine
         self.prediction_interval = 60  # seconds
         self.planner = planner or IntentPlanner()
         self.registry = registry or AGENT_REGISTRY
+        self.prediction_history: Deque[PredictionRecord] = deque(maxlen=history_limit)
+        self.prediction_stats = {
+            "total": 0,
+            "hits": 0,
+            "misses": 0,
+        }
+        self.prediction_ttl = timedelta(seconds=max(60, prediction_ttl_seconds))
 
     async def continuous_prediction_loop(self):
         """
@@ -59,6 +85,8 @@ class PredictiveAgentSpawner:
         if not predictions or context is None:
             return
 
+        self._expire_predictions()
+
         for prediction in predictions:
             confidence = prediction.get("confidence", 0.0)
             if confidence <= 0.8:
@@ -67,6 +95,8 @@ class PredictiveAgentSpawner:
             intent = self._plan_prediction(prediction, context)
             if not intent:
                 continue
+
+            record = self._record_prediction(intent, prediction)
 
             request_context = {
                 "prediction_confidence": confidence,
@@ -93,6 +123,7 @@ class PredictiveAgentSpawner:
                             predicted_need=prediction.get("task"),
                         )
                         await agent.handle(request)
+                        self._mark_prediction_hit(record, proactive=True)
                         handled = True
                         break
                 except Exception as exc:
@@ -106,7 +137,32 @@ class PredictiveAgentSpawner:
             if not handled:
                 logger.debug("No agent accepted proactive intent %s", intent.name)
 
-    def _plan_prediction(self, prediction: Dict[str, Any], context: Dict[str, Any]) -> Optional[Any]:
+    def record_user_intent(self, intent_name: str) -> None:
+        """Record when the user manually triggers an intent to gauge accuracy."""
+        if not intent_name:
+            return
+
+        self._expire_predictions()
+
+        for record in self.prediction_history:
+            if record.status == "pending" and record.intent == intent_name:
+                self._mark_prediction_hit(record, proactive=False)
+                return
+
+    def get_prediction_metrics(self) -> Dict[str, float]:
+        """Expose simple accuracy metrics for observability."""
+        total = self.prediction_stats["total"]
+        accuracy = (
+            self.prediction_stats["hits"] / total if total else 0.0
+        )
+        return {
+            "total_predictions": total,
+            "hits": self.prediction_stats["hits"],
+            "misses": self.prediction_stats["misses"],
+            "accuracy": round(accuracy, 3),
+        }
+
+    def _plan_prediction(self, prediction: Dict[str, Any], context: Dict[str, Any]) -> Optional[Intent]:
         """Convert a predicted task into a structured Intent using the shared planner."""
         task = prediction.get("task")
         if not task:
@@ -122,3 +178,30 @@ class PredictiveAgentSpawner:
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.exception("Failed to plan prediction task '%s'", task, exc_info=exc)
             return None
+
+    def _record_prediction(self, intent: Intent, prediction: Dict[str, Any]) -> PredictionRecord:
+        record = PredictionRecord(
+            intent=intent.name,
+            task=prediction.get("task", intent.summary or intent.name),
+            confidence=prediction.get("confidence", 0.0),
+            timestamp=datetime.utcnow(),
+        )
+        self.prediction_history.append(record)
+        self.prediction_stats["total"] += 1
+        return record
+
+    def _mark_prediction_hit(self, record: PredictionRecord, proactive: bool) -> None:
+        if record.status != "pending":
+            return
+        record.status = "proactive" if proactive else "hit"
+        record.proactive = proactive
+        self.prediction_stats["hits"] += 1
+
+    def _expire_predictions(self) -> None:
+        if not self.prediction_history:
+            return
+        cutoff = datetime.utcnow() - self.prediction_ttl
+        for record in self.prediction_history:
+            if record.status == "pending" and record.timestamp < cutoff:
+                record.status = "miss"
+                self.prediction_stats["misses"] += 1

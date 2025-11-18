@@ -23,7 +23,7 @@ class DeveloperAgent:
             keyword in request.text.lower() for keyword in self.KEYWORDS
         )
 
-    def handle(self, request: AgentRequest) -> AgentResponse:
+    async def handle(self, request: AgentRequest) -> AgentResponse:
         text_lower = request.text.lower()
 
         # Route to specific handlers

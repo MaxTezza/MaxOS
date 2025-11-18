@@ -79,13 +79,25 @@ skill_levels['programming']: 0.85
 - [x] Privacy-first (all local, no cloud)
 - [x] Personality inspection (`--show-personality`)
 - [x] Export personality model (`--export-personality`)
+- [x] **Context awareness engine** (`max_os/learning/context_engine.py`) hooked into every request. Inspect live signals via `--show-context`.
 
 ### 🚧 Coming Next (Week 2)
 
-- [ ] Context awareness engine (monitor git, files, processes)
 - [ ] Predictive agent spawning
 - [ ] Proactive suggestions based on patterns
 - [ ] Auto-execution of high-confidence predictions
+
+## Context Awareness Engine (NEW)
+
+`max_os/learning/context_engine.py` now gathers system, process, git, filesystem, time, network, and application signals in parallel. The orchestrator automatically injects this into each interaction so predictions get fresh state.
+
+**Try it out:**
+
+```bash
+python -m max_os.interfaces.cli.main "show system health" --json --show-context
+```
+
+The `--show-context` flag prints the captured signals so you can watch git status, recent downloads, active window, etc., in real time.
 
 ## CLI Commands
 

@@ -13,6 +13,13 @@ class AgentRequest:
     text: str
     context: Dict[str, Any]
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "intent": self.intent,
+            "text": self.text,
+            "context": self.context,
+        }
+
 
 @dataclass
 class AgentResponse:
@@ -34,5 +41,5 @@ class BaseAgent(Protocol):
     def can_handle(self, request: AgentRequest) -> bool:
         """Return True if this agent can handle the incoming request."""
 
-    def handle(self, request: AgentRequest) -> AgentResponse:
+    async def handle(self, request: AgentRequest) -> AgentResponse:
         """Execute the request and return a structured response."""

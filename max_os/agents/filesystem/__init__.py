@@ -23,8 +23,12 @@ class FileSystemAgent:
         "copy",
         "install",
         "list",
-        "find",
-        "search",
+        "ls",
+        "cd",
+        "pwd",
+        "mkdir",
+        "rm",
+        "touch",
     )
 
     def __init__(self, config: Dict[str, object] | None = None) -> None:
@@ -33,11 +37,9 @@ class FileSystemAgent:
         self.allowed_roots = [Path(path).resolve() for path in whitelist]
 
     def can_handle(self, request: AgentRequest) -> bool:
-        return request.intent.startswith("file.") or any(
-            keyword in request.text.lower() for keyword in self.KEYWORDS
-        )
+        return request.intent.startswith("file.")
 
-    def handle(self, request: AgentRequest) -> AgentResponse:
+    async def handle(self, request: AgentRequest) -> AgentResponse:
         text_lower = request.text.lower()
 
         # Route to specific handlers based on keywords

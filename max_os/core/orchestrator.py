@@ -127,6 +127,9 @@ class AIOperatingSystem:
         self.last_context = context
         self.logger.info("Planned intent", extra={"intent": intent.name, "slots": intent.to_context()})
 
+        if self.enable_learning and self.prediction_spawner:
+            self.prediction_spawner.record_user_intent(intent.name)
+
         # Add last action to context for pattern detection
         recent_history = self.memory.history[-2:] if len(self.memory.history) >= 2 else []
         if recent_history and recent_history[0].role == "user":

@@ -21,6 +21,7 @@ Natural-language control plane for Linux that routes user intents to trusted aut
   - **Privacy-First**: All learning stored locally in SQLite (`~/.maxos/personality.db`), no cloud telemetry
   - **Personality Inspection**: View learned preferences with `--show-personality` or export with `--export-personality`
 - **Hybrid intent planner** backed by Pydantic schemas plus a graceful path for future LLM-powered planning.
+- **Redis-backed conversation memory** for persistent, multi-session context.
 - **CLI prototype** that parses intents and forwards them to the best-matching agent with structured responses, including a short-lived conversation memory buffer, JSON output mode, and transcript export.
 - **Configuration loader** for environment + YAML settings, including placeholders for API keys and policy controls, and an LLM adapter that falls back to local stubs when keys are missing.
 - **Structured logging** helper wired into the orchestrator so every request/response is audit-ready even without remote services.
@@ -32,6 +33,7 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 cp config/settings.example.yaml config/settings.yaml
+# Set your OpenAI API key in config/settings.yaml
 ```
 
 **Example Commands**
@@ -58,6 +60,11 @@ python -m max_os.interfaces.cli.main "dns lookup github.com"
 # Personality Learning (learns from every interaction!)
 python -m max_os.interfaces.cli.main --show-personality
 python -m max_os.interfaces.cli.main --export-personality ~/my_personality.json
+```
+
+**Running the REST API**
+```bash
+uvicorn max_os.interfaces.api.main:app --reload
 ```
 
 **CLI Flags**
