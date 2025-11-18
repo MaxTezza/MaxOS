@@ -52,7 +52,7 @@ class PredictiveAgentSpawner:
             "hits": 0,
             "misses": 0,
         }
-        self.prediction_ttl = timedelta(seconds=max(60, prediction_ttl_seconds))
+        self.prediction_ttl = timedelta(seconds=prediction_ttl_seconds)
 
     async def continuous_prediction_loop(self):
         """
