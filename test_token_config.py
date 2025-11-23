@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Test script to verify token configuration is working."""
 
 import os

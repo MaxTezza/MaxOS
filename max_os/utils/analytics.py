@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleAnalytics:
@@ -66,7 +69,7 @@ class GoogleAnalytics:
                     return response.status == 204
         except Exception as e:
             # Silently fail - telemetry should not break the app
-            print(f"GA telemetry error: {e}")
+            logger.debug(f"GA telemetry error: {e}")
             return False
 
     async def send_page_view(self, client_id: str, page_path: str, page_title: Optional[str] = None) -> bool:
