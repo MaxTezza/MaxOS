@@ -47,3 +47,7 @@ logging:
 telemetry:
   enabled: false
   endpoint: "https://telemetry.tezzaworks.ai"
+  # Google Analytics configuration (optional)
+  google_analytics:
+    measurement_id: "G-XXXXXXXXXX"  # Your GA4 Measurement ID
+    api_secret: "your-api-secret"   # Your Measurement Protocol API Secret
