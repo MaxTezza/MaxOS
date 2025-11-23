@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import threading
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 
@@ -27,6 +28,22 @@ class GoogleAnalytics:
         self.api_secret = api_secret or os.environ.get("GA_API_SECRET")
         self.endpoint = "https://www.google-analytics.com/mp/collect"
         self.enabled = bool(self.measurement_id and self.api_secret)
+        self._session: Optional[aiohttp.ClientSession] = None
+        self._session_lock = asyncio.Lock()
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create the aiohttp session."""
+        if self._session is None or self._session.closed:
+            async with self._session_lock:
+                if self._session is None or self._session.closed:
+                    self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def close(self):
+        """Close the aiohttp session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
 
     async def send_event(
         self,
@@ -61,12 +78,13 @@ class GoogleAnalytics:
             ],
         }
 
+        # Note: GA4 Measurement Protocol requires api_secret in query params (per official docs)
         url = f"{self.endpoint}?{urlencode({'measurement_id': self.measurement_id, 'api_secret': self.api_secret})}"
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=5)) as response:
-                    return response.status == 204
+            session = await self._get_session()
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=5)) as response:
+                return response.status == 204
         except Exception as e:
             # Silently fail - telemetry should not break the app
             logger.debug(f"GA telemetry error: {e}")
@@ -119,13 +137,14 @@ class GoogleAnalytics:
         return await self.send_event("agent_execution", client_id, params)
 
 
-# Singleton instance
+# Singleton instance and lock
 _ga_instance: Optional[GoogleAnalytics] = None
+_ga_lock = threading.Lock()
 
 
 def get_ga_client(settings: Optional[Dict[str, Any]] = None) -> GoogleAnalytics:
     """
-    Get or create the Google Analytics client singleton.
+    Get or create the Google Analytics client singleton (thread-safe).
 
     Args:
         settings: Optional telemetry settings dict
@@ -134,15 +153,19 @@ def get_ga_client(settings: Optional[Dict[str, Any]] = None) -> GoogleAnalytics:
         GoogleAnalytics instance
     """
     global _ga_instance
+    
     if _ga_instance is None:
-        measurement_id = None
-        api_secret = None
+        with _ga_lock:
+            # Double-check pattern for thread safety
+            if _ga_instance is None:
+                measurement_id = None
+                api_secret = None
 
-        if settings and "google_analytics" in settings:
-            ga_config = settings["google_analytics"]
-            measurement_id = ga_config.get("measurement_id")
-            api_secret = ga_config.get("api_secret")
+                if settings and "google_analytics" in settings:
+                    ga_config = settings["google_analytics"]
+                    measurement_id = ga_config.get("measurement_id")
+                    api_secret = ga_config.get("api_secret")
 
-        _ga_instance = GoogleAnalytics(measurement_id=measurement_id, api_secret=api_secret)
+                _ga_instance = GoogleAnalytics(measurement_id=measurement_id, api_secret=api_secret)
 
     return _ga_instance
