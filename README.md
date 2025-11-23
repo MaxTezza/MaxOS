@@ -28,12 +28,32 @@ Natural-language control plane for Linux that routes user intents to trusted aut
 - **Documentation set**: `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/AGENT_IMPLEMENTATION.md`, `docs/PREDICTIVE_AGENT_ARCHITECTURE.md`, `docs/LEARNING_SYSTEM_DEMO.md`
 
 ## Getting Started
+
+### 1. Setup Environment
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
+```
+
+### 2. Configure API Tokens
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Copy config template
 cp config/settings.example.yaml config/settings.yaml
-# Set your OpenAI API key in config/settings.yaml
+
+# Edit .env and add your API keys (see docs/TOKEN_SETUP.md for detailed instructions)
+# Required: ANTHROPIC_API_KEY
+# Optional: OPENAI_API_KEY, GA_MEASUREMENT_ID, GA_API_SECRET
+```
+
+**📖 For detailed token setup instructions, see [docs/TOKEN_SETUP.md](docs/TOKEN_SETUP.md)**
+
+### 3. Run MaxOS
+```bash
+python -m max_os.interfaces.cli.main "show system health"
 ```
 
 **Example Commands**
