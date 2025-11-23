@@ -1,8 +1,8 @@
 """Hybrid intent planner that can fall back to rule-based parsing."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
 
 from max_os.core.intent import Intent, Slot
 
@@ -19,10 +19,10 @@ class IntentPlanner:
     """Maps natural language to Intent objects."""
 
     def __init__(self, rules: Iterable[KeywordRule] | None = None, default_intent: str = "system.general"):
-        self.rules: List[KeywordRule] = list(rules) if rules else self._default_rules()
+        self.rules: list[KeywordRule] = list(rules) if rules else self._default_rules()
         self.default_intent = default_intent
 
-    def plan(self, text: str, context: Dict[str, str] | None = None) -> Intent:
+    def plan(self, text: str, context: dict[str, str] | None = None) -> Intent:
         lowered = text.lower()
         for rule in self.rules:
             if rule.keyword in lowered:
@@ -38,7 +38,7 @@ class IntentPlanner:
         return Intent(name=self.default_intent, confidence=0.2, slots=[], summary="General system request")
 
     @staticmethod
-    def _default_rules() -> List[KeywordRule]:
+    def _default_rules() -> list[KeywordRule]:
         return [
             KeywordRule("evolve", "agent.evolver", "Self-improvement workflows", "keyword"),
             KeywordRule("agent evolver", "agent.evolver", "Self-improvement workflows", "keyword"),

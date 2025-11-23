@@ -1,8 +1,11 @@
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+
 from max_os.core.intent import Intent
 from max_os.core.intent_classifier import IntentClassifier
 from max_os.core.planner import IntentPlanner
+
 
 @pytest.fixture
 def mock_planner():

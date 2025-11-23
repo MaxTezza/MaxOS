@@ -1,6 +1,8 @@
 from unittest.mock import patch
-import pytest
+
 import fakeredis
+import pytest
+
 from max_os.core.orchestrator import AIOperatingSystem
 
 

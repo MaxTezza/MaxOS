@@ -10,16 +10,14 @@ import subprocess
 import threading
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-
-
 import structlog
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 logger = structlog.get_logger("max_os.context_engine")
 
@@ -28,15 +26,15 @@ logger = structlog.get_logger("max_os.context_engine")
 class ContextSignals:
     """Structured representation of gathered signals."""
 
-    system: Dict[str, Any] = field(default_factory=dict)
-    processes: Dict[str, Any] = field(default_factory=dict)
-    git: Dict[str, Any] = field(default_factory=dict)
-    filesystem: Dict[str, Any] = field(default_factory=dict)
-    time: Dict[str, Any] = field(default_factory=dict)
-    network: Dict[str, Any] = field(default_factory=dict)
-    applications: Dict[str, Any] = field(default_factory=dict)
+    system: dict[str, Any] = field(default_factory=dict)
+    processes: dict[str, Any] = field(default_factory=dict)
+    git: dict[str, Any] = field(default_factory=dict)
+    filesystem: dict[str, Any] = field(default_factory=dict)
+    time: dict[str, Any] = field(default_factory=dict)
+    network: dict[str, Any] = field(default_factory=dict)
+    applications: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "system": self.system,
             "processes": self.processes,
@@ -49,7 +47,7 @@ class ContextSignals:
 
 
 class FileChangeEventHandler(FileSystemEventHandler):
-    def __init__(self, context_engine: 'ContextAwarenessEngine', max_events=100):
+    def __init__(self, context_engine: ContextAwarenessEngine, max_events=100):
         super().__init__()
         self.context_engine = context_engine
         self.events = []
@@ -62,7 +60,7 @@ class FileChangeEventHandler(FileSystemEventHandler):
                 "event_type": event.event_type,
                 "src_path": event.src_path,
                 "is_directory": event.is_directory,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(UTC).isoformat(),
             })
             if len(self.events) > self.max_events:
                 self.events.pop(0)
@@ -82,9 +80,9 @@ class ContextAwarenessEngine:
 
     def __init__(
         self,
-        repo_paths: Optional[List[Path]] = None,
-        downloads_dir: Optional[Path] = None,
-        tracked_dirs: Optional[List[Path]] = None,
+        repo_paths: list[Path] | None = None,
+        downloads_dir: Path | None = None,
+        tracked_dirs: list[Path] | None = None,
     ) -> None:
         self.logger = structlog.get_logger("max_os.context_engine")
         self.repo_cache_ttl = timedelta(
@@ -135,7 +133,7 @@ class ContextAwarenessEngine:
 
 
 
-    async def gather_all_signals(self, timeout: float | None = None) -> Dict[str, Any]:
+    async def gather_all_signals(self, timeout: float | None = None) -> dict[str, Any]:
         """Collect every available signal about the current state."""
         async def _collect():
             return await asyncio.gather(
@@ -167,22 +165,22 @@ class ContextAwarenessEngine:
 
         return signals.to_dict()
 
-    def _unwrap_result(self, result: Any) -> Dict[str, Any]:
+    def _unwrap_result(self, result: Any) -> dict[str, Any]:
         if isinstance(result, Exception):
             logger.warning("Context signal collection failed", exc_info=result)
             return {"error": str(result)}
         return result
 
-    async def _gather_system_metrics(self) -> Dict[str, Any]:
+    async def _gather_system_metrics(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_system_metrics)
 
-    def _collect_system_metrics(self) -> Dict[str, Any]:
+    def _collect_system_metrics(self) -> dict[str, Any]:
         cpu_percent = psutil.cpu_percent(interval=0.2)
         mem = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
 
         return {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat(),
             "cpu": {
                 "percent": cpu_percent,
                 "count": psutil.cpu_count(),
@@ -203,10 +201,10 @@ class ContextAwarenessEngine:
             "uptime_seconds": max(0, int(datetime.now().timestamp() - psutil.boot_time())),
         }
 
-    async def _gather_processes(self) -> Dict[str, Any]:
+    async def _gather_processes(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_processes)
 
-    def _collect_processes(self) -> Dict[str, Any]:
+    def _collect_processes(self) -> dict[str, Any]:
         processes = []
         for proc in psutil.process_iter(["pid", "name", "username", "cpu_percent", "memory_percent"]):
             try:
@@ -231,10 +229,10 @@ class ContextAwarenessEngine:
             "top_processes": top_processes,
         }
 
-    async def _gather_git_signals(self) -> Dict[str, Any]:
+    async def _gather_git_signals(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_git_signals)
 
-    def _collect_git_signals(self) -> Dict[str, Any]:
+    def _collect_git_signals(self) -> dict[str, Any]:
         repo_statuses = []
         for repo in self.repo_paths:
             if not repo.exists() or not (repo / ".git").exists():
@@ -253,7 +251,7 @@ class ContextAwarenessEngine:
             "dirty_count": len(dirty),
         }
 
-    def _git_status(self, repo: Path) -> Dict[str, Any]:
+    def _git_status(self, repo: Path) -> dict[str, Any]:
         result = subprocess.run(
             ["git", "status", "--porcelain", "--branch"],
             cwd=repo,
@@ -290,10 +288,10 @@ class ContextAwarenessEngine:
             "clean": len(staged) == 0 and len(modified) == 0 and len(untracked) == 0,
         }
 
-    async def _gather_filesystem_signals(self) -> Dict[str, Any]:
+    async def _gather_filesystem_signals(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_filesystem_signals)
 
-    def _collect_filesystem_signals(self) -> Dict[str, Any]:
+    def _collect_filesystem_signals(self) -> dict[str, Any]:
         downloads = self._recent_files(self.downloads_dir, limit=5)
         tracked = {
             str(directory): self._recent_files(directory, limit=3)
@@ -308,7 +306,7 @@ class ContextAwarenessEngine:
             "recent_events": recent_events,
         }
 
-    async def _gather_time_signals(self) -> Dict[str, Any]:
+    async def _gather_time_signals(self) -> dict[str, Any]:
         now = datetime.now()
         return {
             "time_of_day": now.strftime("%H:%M"),
@@ -316,10 +314,10 @@ class ContextAwarenessEngine:
             "timestamp": now.isoformat(),
         }
 
-    async def _gather_network_signals(self) -> Dict[str, Any]:
+    async def _gather_network_signals(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_network_signals)
 
-    def _collect_network_signals(self) -> Dict[str, Any]:
+    def _collect_network_signals(self) -> dict[str, Any]:
         net_io = psutil.net_io_counters(pernic=True)
         interfaces = {}
         for name, stats in net_io.items():
@@ -348,10 +346,10 @@ class ContextAwarenessEngine:
             "connection_count": len(connections),
         }
 
-    async def _gather_application_signals(self) -> Dict[str, Any]:
+    async def _gather_application_signals(self) -> dict[str, Any]:
         return await asyncio.to_thread(self._collect_application_signals)
 
-    def _collect_application_signals(self) -> Dict[str, Any]:
+    def _collect_application_signals(self) -> dict[str, Any]:
         active_window = self._get_active_window()
         clipboard = self._get_clipboard_contents()
 
@@ -360,7 +358,7 @@ class ContextAwarenessEngine:
             "clipboard_preview": clipboard[:1000] if clipboard else None,
         }
 
-    def _recent_files(self, directory: Path, limit: int = 5) -> List[Dict[str, Any]]:
+    def _recent_files(self, directory: Path, limit: int = 5) -> list[dict[str, Any]]:
         if not directory.exists():
             return []
 
@@ -384,7 +382,7 @@ class ContextAwarenessEngine:
         entries.sort(key=lambda item: item["modified"], reverse=True)
         return entries[:limit]
 
-    def _safe_load_average(self) -> Dict[str, float]:
+    def _safe_load_average(self) -> dict[str, float]:
         try:
             load1, load5, load15 = os.getloadavg()
             return {"1min": load1, "5min": load5, "15min": load15}
@@ -396,11 +394,11 @@ class ContextAwarenessEngine:
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir / "repos.json"
 
-    def _load_repos_from_cache(self) -> List[Path] | None:
+    def _load_repos_from_cache(self) -> list[Path] | None:
         cache_path = self._get_repo_cache_path()
         if cache_path.exists():
             try:
-                with open(cache_path, "r") as f:
+                with open(cache_path) as f:
                     cache_data = json.load(f)
                     timestamp = datetime.fromisoformat(cache_data["timestamp"])
                     if datetime.now() - timestamp < self.repo_cache_ttl:
@@ -409,7 +407,7 @@ class ContextAwarenessEngine:
                 logger.warning("Failed to load repo cache, performing full scan.")
         return None
 
-    def _save_repos_to_cache(self, repos: List[Path]) -> None:
+    def _save_repos_to_cache(self, repos: list[Path]) -> None:
         cache_path = self._get_repo_cache_path()
         cache_data = {
             "timestamp": datetime.now().isoformat(),
@@ -418,7 +416,7 @@ class ContextAwarenessEngine:
         with open(cache_path, "w") as f:
             json.dump(cache_data, f)
 
-    def _scan_for_repos(self) -> List[Path]:
+    def _scan_for_repos(self) -> list[Path]:
         # Allow overrides through env var e.g. "/home/user/src:/srv/repos"
         env_paths = os.environ.get("MAXOS_REPO_PATHS")
         candidate_roots = [Path.cwd()]
@@ -446,7 +444,7 @@ class ContextAwarenessEngine:
             seen.add(resolved)
             queue.append((resolved, 0))
 
-        repos: List[Path] = []
+        repos: list[Path] = []
         while queue and len(repos) < self.max_repo_results:
             current, depth = queue.popleft()
             if not current.exists() or not current.is_dir():
@@ -478,7 +476,7 @@ class ContextAwarenessEngine:
 
         return repos
 
-    def _discover_repos(self) -> List[Path]:
+    def _discover_repos(self) -> list[Path]:
         cached_repos = self._load_repos_from_cache()
         if cached_repos:
             logger.debug("Loaded repos from cache.")
@@ -489,7 +487,7 @@ class ContextAwarenessEngine:
         self._save_repos_to_cache(repos)
         return repos
 
-    def _default_tracked_dirs(self) -> List[Path]:
+    def _default_tracked_dirs(self) -> list[Path]:
         candidates = [
             Path.cwd(),
             Path.home() / "Documents",
@@ -499,7 +497,7 @@ class ContextAwarenessEngine:
         existing = [path for path in candidates if path.exists()]
         return existing or [Path.cwd()]
 
-    def _get_active_window(self) -> Optional[str]:
+    def _get_active_window(self) -> str | None:
         system = platform.system().lower()
         try:
             if system == "darwin":
@@ -519,7 +517,7 @@ class ContextAwarenessEngine:
             logger.debug("Failed to get active window", exc_info=exc)
         return None
 
-    def _get_wayland_active_window(self) -> Optional[str]:
+    def _get_wayland_active_window(self) -> str | None:
         """Attempt to read focused window metadata on Wayland compositors."""
         if os.environ.get("XDG_SESSION_TYPE", "").lower() != "wayland":
             return None
@@ -547,7 +545,7 @@ class ContextAwarenessEngine:
 
         return None
 
-    def _find_focused_sway_node(self, node: Dict[str, Any]) -> Optional[str]:
+    def _find_focused_sway_node(self, node: dict[str, Any]) -> str | None:
         if node.get("focused"):
             return node.get("name")
         for child_key in ("nodes", "floating_nodes"):
@@ -557,7 +555,7 @@ class ContextAwarenessEngine:
                     return result
         return None
 
-    def _get_clipboard_contents(self) -> Optional[str]:
+    def _get_clipboard_contents(self) -> str | None:
         system = platform.system().lower()
         commands = []
         if system == "darwin":
@@ -585,7 +583,7 @@ class ContextAwarenessEngine:
                 continue
         return None
 
-    def _run_command(self, command: List[str]) -> Optional[str]:
+    def _run_command(self, command: list[str]) -> str | None:
         result = subprocess.run(
             command,
             capture_output=True,

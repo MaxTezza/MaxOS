@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List
 
-from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
+from max_os.agents.base import AgentRequest, AgentResponse
 from max_os.utils.llm_api import LLMAPI
 
 
@@ -24,7 +24,7 @@ class KnowledgeAgent:
         "find out",
     )
 
-    def __init__(self, config: Dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         self.llm_api = LLMAPI()  # Initialize LLM API client
         self.knowledge_base_path = Path(self.config.get("knowledge_base_path", Path.cwd())) # Set to current working directory (ai-os root)

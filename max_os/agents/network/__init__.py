@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import socket
 import subprocess
-from typing import Dict
 
 import psutil
 
@@ -16,7 +15,7 @@ class NetworkAgent:
     capabilities = ["wifi", "vpn", "firewall", "diagnostics"]
     KEYWORDS = ("wifi", "network", "vpn", "firewall", "connect", "ip", "interface", "ping")
 
-    def __init__(self, config: Dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         self.allowed_interfaces = self.config.get("allowed_interfaces", [])
 
@@ -90,7 +89,6 @@ class NetworkAgent:
     def _handle_ping(self, request: AgentRequest) -> AgentResponse:
         """Ping a host to check connectivity."""
         # Extract hostname/IP from text
-        text_lower = request.text.lower()
         target = None
 
         # Common patterns: "ping google.com", "check if 8.8.8.8 is reachable"
@@ -120,8 +118,8 @@ class NetworkAgent:
             lines = result.stdout.strip().split('\n')
 
             # Parse statistics
-            stats_line = [l for l in lines if "packets transmitted" in l]
-            rtt_line = [l for l in lines if "rtt min/avg/max" in l or "round-trip" in l]
+            stats_line = [line for line in lines if "packets transmitted" in line]
+            rtt_line = [line for line in lines if "rtt min/avg/max" in line or "round-trip" in line]
 
             stats = {}
             if stats_line:

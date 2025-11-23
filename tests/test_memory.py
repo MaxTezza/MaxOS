@@ -1,6 +1,7 @@
+from pathlib import Path
+
 from max_os.agents.base import AgentResponse
 from max_os.core.memory import ConversationMemory
-from pathlib import Path
 
 
 def test_memory_retains_limit():

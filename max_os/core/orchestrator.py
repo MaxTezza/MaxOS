@@ -3,29 +3,28 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Dict, List
 
 import structlog
 
-from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.agents import (
+    AGENT_REGISTRY,
     AgentEvolverAgent,
     DeveloperAgent,
     FileSystemAgent,
+    KnowledgeAgent,
     NetworkAgent,
     SystemAgent,
-    KnowledgeAgent,
-    AGENT_REGISTRY,
 )
+from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.core.intent import Intent
 from max_os.core.intent_classifier import IntentClassifier
 from max_os.core.memory import ConversationMemory
 from max_os.core.planner import IntentPlanner
 from max_os.learning.context_engine import ContextAwarenessEngine
+from max_os.learning.personality import Interaction, UserPersonalityModel
 from max_os.learning.prediction import PredictiveAgentSpawner
-from max_os.learning.realtime_engine import RealTimeLearningEngine
-from max_os.learning.personality import UserPersonalityModel, Interaction
 from max_os.learning.prompt_filter import PromptOptimizationFilter
+from max_os.learning.realtime_engine import RealTimeLearningEngine
 from max_os.utils.config import Settings, load_settings
 from max_os.utils.logging import configure_logging
 
@@ -33,15 +32,15 @@ from max_os.utils.logging import configure_logging
 class AIOperatingSystem:
     """Registers all agents and dispatches user commands."""
 
-    def __init__(self, settings: Settings | None = None, agents: List[BaseAgent] | None = None, enable_learning: bool = True, auto_start_loops: bool = False) -> None:
+    def __init__(self, settings: Settings | None = None, agents: list[BaseAgent] | None = None, enable_learning: bool = True, auto_start_loops: bool = False) -> None:
         self.settings = settings or load_settings()
         configure_logging(self.settings)
         self.logger = structlog.get_logger("max_os.orchestrator")
         self.planner = IntentPlanner()
         self.intent_classifier = IntentClassifier(self.planner) # Initialize IntentClassifier
-        self.agents: List[BaseAgent] = agents or self._init_agents()
+        self.agents: list[BaseAgent] = agents or self._init_agents()
         self.memory = ConversationMemory(limit=50, settings=self.settings)
-        self.last_context: Dict[str, object] | None = None
+        self.last_context: dict[str, object] | None = None
         self._learning_tasks = []
 
         # Learning system
@@ -89,7 +88,7 @@ class AIOperatingSystem:
         # The asyncio tasks for the learning loops will be cancelled
         # when the main event loop is closed.
 
-    def _init_agents(self) -> List[BaseAgent]:
+    def _init_agents(self) -> list[BaseAgent]:
         agent_configs = self.settings.agents
         agents = [
             # AgentEvolver first to ensure it catches evolver-specific intents
@@ -108,7 +107,7 @@ class AIOperatingSystem:
     def register_agent(self, agent: BaseAgent) -> None:
         self.agents.append(agent)
 
-    async def handle_text(self, text: str, context: Dict[str, object] | None = None) -> AgentResponse:
+    async def handle_text(self, text: str, context: dict[str, object] | None = None) -> AgentResponse:
         context = context or {}
         active_window = None # Initialize active_window
         if self.enable_learning and self.context_engine and "signals" not in context:
@@ -169,7 +168,7 @@ class AIOperatingSystem:
 
         return fallback
 
-    def _apply_learning(self, user_input: str, response: AgentResponse, context: Dict, agent_name: str) -> AgentResponse:
+    def _apply_learning(self, user_input: str, response: AgentResponse, context: dict, agent_name: str) -> AgentResponse:
         """Apply personality learning and response optimization."""
         # Estimate technical complexity
         domain = context.get('domain', 'general')
@@ -207,18 +206,18 @@ class AIOperatingSystem:
 
         return optimized
 
-    async def _plan_intent(self, text: str, context: Dict[str, object]) -> Intent:
+    async def _plan_intent(self, text: str, context: dict[str, object]) -> Intent:
         return await self.intent_classifier.classify(text, context)
 
-    def get_last_context(self) -> Dict[str, object]:
+    def get_last_context(self) -> dict[str, object]:
         return self.last_context or {}
 
-    def get_learning_metrics(self) -> List[Dict[str, float]]:
+    def get_learning_metrics(self) -> list[dict[str, float]]:
         if self.realtime_learning_engine:
             return self.realtime_learning_engine.get_recent_metrics()
         return []
 
-    async def _gather_context_signals(self) -> Dict[str, object]:
+    async def _gather_context_signals(self) -> dict[str, object]:
         if not self.context_engine:
             return {}
 

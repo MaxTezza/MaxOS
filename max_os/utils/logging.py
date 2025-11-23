@@ -1,14 +1,18 @@
 """Logging helper that honors settings and supports JSON output."""
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
-from typing import Any, Dict
 
 import structlog
-from structlog.processors import JSONRenderer, format_exc_info, StackInfoRenderer, TimeStamper, UnicodeDecoder
 from structlog.dev import ConsoleRenderer
+from structlog.processors import (
+    JSONRenderer,
+    StackInfoRenderer,
+    TimeStamper,
+    UnicodeDecoder,
+    format_exc_info,
+)
 
 from max_os.utils.config import Settings
 

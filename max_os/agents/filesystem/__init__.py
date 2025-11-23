@@ -1,10 +1,8 @@
 """Filesystem agent: responsible for file CRUD, search, organization."""
 from __future__ import annotations
 
-import os
-import shutil
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List
 
 from max_os.agents.base import AgentRequest, AgentResponse
 
@@ -31,7 +29,7 @@ class FileSystemAgent:
         "touch",
     )
 
-    def __init__(self, config: Dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         whitelist = self.config.get("root_whitelist", ["/home"])
         self.allowed_roots = [Path(path).resolve() for path in whitelist]
