@@ -1,10 +1,8 @@
 """Developer agent for scaffolding code bases and automating workflows."""
 from __future__ import annotations
 
-import os
 import subprocess
 from pathlib import Path
-from typing import Dict
 
 from max_os.agents.base import AgentRequest, AgentResponse
 
@@ -15,7 +13,7 @@ class DeveloperAgent:
     capabilities = ["scaffold", "ci", "code_review", "git"]
     KEYWORDS = ("project", "repo", "code", "test", "deploy", "ci", "git", "commit", "branch")
 
-    def __init__(self, config: Dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
 
     def can_handle(self, request: AgentRequest) -> bool:

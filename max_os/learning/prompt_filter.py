@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict
+from typing import Any
 
 from max_os.agents.base import AgentResponse
 from max_os.learning.personality import UserPersonalityModel
@@ -14,7 +14,7 @@ class PromptOptimizationFilter:
     def __init__(self, personality_model: UserPersonalityModel):
         self.upm = personality_model
 
-    def optimize_response(self, response: AgentResponse, context: Dict[str, Any]) -> AgentResponse:
+    def optimize_response(self, response: AgentResponse, context: dict[str, Any]) -> AgentResponse:
         """Transform agent response to match user preferences."""
 
         # Get user's communication preferences
@@ -36,7 +36,7 @@ class PromptOptimizationFilter:
 
         return optimized
 
-    def _optimize_message(self, message: str, params: Dict[str, float], context: Dict[str, Any]) -> str:
+    def _optimize_message(self, message: str, params: dict[str, float], context: dict[str, Any]) -> str:
         """Rewrite message to match user's communication style."""
 
         # Apply verbosity adjustment
@@ -95,7 +95,7 @@ class PromptOptimizationFilter:
 
         return message
 
-    def _add_context(self, message: str, context: Dict[str, Any]) -> str:
+    def _add_context(self, message: str, context: dict[str, Any]) -> str:
         """Add contextual information for verbose users."""
         # Add relevant context based on domain
         domain = context.get('domain')
@@ -111,7 +111,7 @@ class PromptOptimizationFilter:
 
         return message
 
-    def _add_technical_details(self, message: str, context: Dict[str, Any]) -> str:
+    def _add_technical_details(self, message: str, context: dict[str, Any]) -> str:
         """Add technical details for expert users."""
         # Add implementation hints or technical context
         domain = context.get('domain')
@@ -195,7 +195,7 @@ class PromptOptimizationFilter:
         )
         return emoji_pattern.sub('', message)
 
-    def _filter_payload(self, payload: Dict[str, Any] | None, params: Dict[str, float]) -> Dict[str, Any] | None:
+    def _filter_payload(self, payload: dict[str, Any] | None, params: dict[str, float]) -> dict[str, Any] | None:
         """Filter payload based on verbosity preferences."""
         if not payload:
             return payload
@@ -218,7 +218,7 @@ class PromptOptimizationFilter:
     def add_predictive_suggestions(
         self,
         response: AgentResponse,
-        predictions: list[Dict[str, Any]]
+        predictions: list[dict[str, Any]]
     ) -> AgentResponse:
         """Add predictive suggestions to response."""
         if not predictions:

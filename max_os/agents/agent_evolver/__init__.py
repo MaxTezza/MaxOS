@@ -5,10 +5,9 @@ This agent integrates the AgentEvolver framework into MaxOS, enabling the system
 to autonomously generate tasks, refine policies, and continuously improve.
 """
 
-from max_os.agents.base import AgentRequest, AgentResponse
-
-
 import random
+
+from max_os.agents.base import AgentRequest, AgentResponse
 
 # Predefined tasks for generation
 PREDEFINED_TASKS = [

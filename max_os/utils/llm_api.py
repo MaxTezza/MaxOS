@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 import anthropic
 import openai
@@ -7,8 +6,8 @@ import openai
 
 class LLMAPI:
     def __init__(self):
-        self.anthropic_client: Optional[anthropic.Anthropic] = None
-        self.openai_client: Optional[openai.OpenAI] = None
+        self.anthropic_client: anthropic.Anthropic | None = None
+        self.openai_client: openai.OpenAI | None = None
 
         # Initialize Anthropic client if API key is available
         anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")

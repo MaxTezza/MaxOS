@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
@@ -14,12 +14,12 @@ SAMPLE_PATH = "config/settings.example.yaml"
 
 @dataclass
 class Settings:
-    orchestrator: Dict[str, Any] = field(default_factory=dict)
-    agents: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    llm: Dict[str, Any] = field(default_factory=dict)
-    policy: Dict[str, Any] = field(default_factory=dict)
-    logging: Dict[str, Any] = field(default_factory=dict)
-    telemetry: Dict[str, Any] = field(default_factory=dict)
+    orchestrator: dict[str, Any] = field(default_factory=dict)
+    agents: dict[str, dict[str, Any]] = field(default_factory=dict)
+    llm: dict[str, Any] = field(default_factory=dict)
+    policy: dict[str, Any] = field(default_factory=dict)
+    logging: dict[str, Any] = field(default_factory=dict)
+    telemetry: dict[str, Any] = field(default_factory=dict)
 
 
 def load_settings(path: str | None = None) -> Settings:
@@ -30,5 +30,5 @@ def load_settings(path: str | None = None) -> Settings:
     if not chosen_path.exists():
         chosen_path = Path(SAMPLE_PATH)
     with chosen_path.open("r", encoding="utf-8") as handle:
-        data: Dict[str, Any] = yaml.safe_load(handle) or {}
+        data: dict[str, Any] = yaml.safe_load(handle) or {}
     return Settings(**data)

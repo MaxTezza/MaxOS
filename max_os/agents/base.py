@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 
 @dataclass
@@ -11,9 +11,9 @@ class AgentRequest:
 
     intent: str
     text: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "intent": self.intent,
             "text": self.text,
@@ -28,7 +28,7 @@ class AgentResponse:
     agent: str
     status: str
     message: str
-    payload: Dict[str, Any] | None = None
+    payload: dict[str, Any] | None = None
 
 
 class BaseAgent(Protocol):
@@ -36,7 +36,7 @@ class BaseAgent(Protocol):
 
     name: str
     description: str
-    capabilities: List[str]
+    capabilities: list[str]
 
     def can_handle(self, request: AgentRequest) -> bool:
         """Return True if this agent can handle the incoming request."""

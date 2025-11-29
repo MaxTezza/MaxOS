@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
 
 try:
     import redis
@@ -24,9 +23,9 @@ class MemoryItem:
 @dataclass
 class ConversationMemory:
     limit: int = 20
-    history: List[MemoryItem] = field(default_factory=list)
+    history: list[MemoryItem] = field(default_factory=list)
     settings: Settings | None = None
-    redis_client: "redis.Redis | None" = None
+    redis_client: redis.Redis | None = None
 
     def __post_init__(self):
         if (
@@ -43,7 +42,7 @@ class ConversationMemory:
         message = f"{response.agent}: {response.message}"
         self._append(MemoryItem(role="assistant", content=message))
 
-    def serialize(self) -> List[dict]:
+    def serialize(self) -> list[dict]:
         return [item.__dict__ for item in self.get_history()]
 
     def dump(self, path: Path) -> None:
@@ -59,7 +58,7 @@ class ConversationMemory:
             if len(self.history) > self.limit:
                 self.history = self.history[-self.limit :]
 
-    def get_history(self) -> List[MemoryItem]:
+    def get_history(self) -> list[MemoryItem]:
         if self.redis_client:
             history = []
             for item in self.redis_client.lrange("conversation_history", 0, -1):

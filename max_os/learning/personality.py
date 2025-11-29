@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import json
-import structlog
-import sqlite3 # Added for database operations
+import sqlite3  # Added for database operations
+from dataclasses import dataclass  # Import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass # Import dataclass
-from max_os.learning.context_engine import ContextSignals
+from typing import Any
+
+import structlog
 
 
 @dataclass
@@ -19,8 +19,8 @@ class Interaction:
     response_length: int
     technical_complexity: float
     success: bool
-    context: Dict[str, Any]
-    user_reaction: Optional[str] = None  # e.g., "positive", "negative", "neutral"
+    context: dict[str, Any]
+    user_reaction: str | None = None  # e.g., "positive", "negative", "neutral"
 
 
 class UserPersonalityModel:
@@ -28,8 +28,8 @@ class UserPersonalityModel:
     Models the user's personality, preferences, and predicts next needs.
     """
 
-    def __init__(self, db_path: Optional[Path] = None):
-        self.interaction_history: List[Interaction] = []
+    def __init__(self, db_path: Path | None = None):
+        self.interaction_history: list[Interaction] = []
         self.verbosity_preference: float = 0.5  # 0.0 (terse) to 1.0 (verbose)
         self.technical_level: float = 0.5  # 0.0 (novice) to 1.0 (expert)
         self.logger = structlog.get_logger("max_os.learning.personality")
@@ -135,10 +135,10 @@ class UserPersonalityModel:
                             self.emoji_tolerance = value
                         elif key == 'skill_levels':
                             self.skill_levels = value
-                    except (json.JSONDecodeError, KeyError) as e:
+                    except (json.JSONDecodeError, KeyError):
                         # Log but don't crash - just use defaults
                         pass
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Database error - use defaults
             pass
 
@@ -165,7 +165,7 @@ class UserPersonalityModel:
                     """, (key, json.dumps(value), now))
 
                 conn.commit()
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Database error - silently fail for now
             pass
 
@@ -209,7 +209,7 @@ class UserPersonalityModel:
                 ))
 
                 conn.commit()
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Database error - silently fail for now
             pass
 
@@ -300,13 +300,13 @@ class UserPersonalityModel:
                 """)
 
                 self.sequential_patterns = cursor.fetchall()
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Database error - keep existing patterns
             pass
 
-    def predict_next_need(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def predict_next_need(self, context: dict[str, Any]) -> list[dict[str, Any]]:
         """Predict what user will need next based on context and extracted features."""
-        predictions: List[Dict[str, Any]] = []
+        predictions: list[dict[str, Any]] = []
         features = self._extract_features(context)
 
         def add_prediction(task: str, confidence: float, reason: str, ptype: str) -> None:
@@ -408,7 +408,7 @@ class UserPersonalityModel:
         return predictions[:5]
 
     @staticmethod
-    def _is_recent_timestamp(timestamp: Optional[str], minutes: int = 10) -> bool:
+    def _is_recent_timestamp(timestamp: str | None, minutes: int = 10) -> bool:
         if not timestamp:
             return False
         try:
@@ -420,7 +420,7 @@ class UserPersonalityModel:
             parsed = parsed.astimezone().replace(tzinfo=None)
         return (datetime.now() - parsed) <= timedelta(minutes=minutes)
 
-    def get_communication_params(self) -> Dict[str, float]:
+    def get_communication_params(self) -> dict[str, float]:
         """Get current communication style parameters."""
         return {
             'verbosity': self.verbosity_preference,
@@ -433,7 +433,7 @@ class UserPersonalityModel:
         """Get user's expertise level in a specific domain."""
         return self.skill_levels.get(domain, 0.5)
 
-    def export_personality(self) -> Dict[str, Any]:
+    def export_personality(self) -> dict[str, Any]:
         """Export personality model for inspection or transfer."""
         return {
             'communication_style': self.get_communication_params(),
@@ -447,7 +447,7 @@ class UserPersonalityModel:
             'confidence_threshold': self.confidence_threshold,
         }
 
-    def get_recent_interactions(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_interactions(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent interaction history."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -472,7 +472,7 @@ class UserPersonalityModel:
                 }
                 for row in rows
             ]
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # Database error - return empty list
             return []
 
@@ -487,7 +487,7 @@ class UserPersonalityModel:
             + (1 - self.emoji_tolerance) # Lower tolerance means higher score for "seriousness"
         ) / 4.0
 
-    def _extract_features(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_features(self, context: dict[str, Any]) -> dict[str, Any]:
         """
         Extracts a structured feature vector from the current context and personality state.
         """

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Any, List
-from max_os.core.intent import Intent, Slot
-from max_os.core.planner import IntentPlanner # Re-using existing planner for initial heuristics
+from typing import Any
+
+from max_os.core.intent import Intent
+from max_os.core.planner import IntentPlanner  # Re-using existing planner for initial heuristics
 
 
 class IntentClassifier:
@@ -14,7 +15,7 @@ class IntentClassifier:
     def __init__(self, planner: IntentPlanner | None = None):
         self.planner = planner or IntentPlanner() # Use existing planner for rule-based classification
 
-    async def classify(self, prompt: str, context: Dict[str, Any]) -> Intent:
+    async def classify(self, prompt: str, context: dict[str, Any]) -> Intent:
         """
         Classifies the user's intent given the raw prompt and current context.
 

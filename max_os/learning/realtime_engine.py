@@ -1,13 +1,13 @@
 import asyncio
-import structlog
-from collections import deque, Counter
+from collections import Counter, deque
 from statistics import mean
-from typing import Dict, List
+
+import structlog
 from sklearn.ensemble import IsolationForest
+
+from max_os.agents.base import BaseAgent  # Import BaseAgent for type hinting
 from max_os.learning.personality import Interaction, UserPersonalityModel
 
-
-from max_os.agents.base import BaseAgent # Import BaseAgent for type hinting
 
 class RealTimeLearningEngine:
     """
@@ -30,7 +30,7 @@ class RealTimeLearningEngine:
         self.max_queue = max_queue  # Max interactions to hold in memory
         self.batch_size = batch_size  # How many interactions to process at once
         self.observation_interval = observation_interval  # seconds between batch processing
-        self._recent_metrics: deque[Dict[str, float]] = deque(maxlen=5) # Store last 5 batch metrics
+        self._recent_metrics: deque[dict[str, float]] = deque(maxlen=5) # Store last 5 batch metrics
         self.anomaly_threshold = 0.5 # If success rate drops below this, log a warning
         self.anomaly_detector = IsolationForest(random_state=42)
         self.anomaly_detector_trained = False
@@ -45,7 +45,7 @@ class RealTimeLearningEngine:
             )
         self._queue.append(interaction)
 
-    def get_recent_metrics(self) -> List[Dict[str, float]]:
+    def get_recent_metrics(self) -> list[dict[str, float]]:
         """Expose recent batch analytics for debugging or UI."""
         return list(self._recent_metrics)
 
@@ -65,13 +65,13 @@ class RealTimeLearningEngine:
         finally:
             self._running = False
 
-    def _drain_batch(self) -> List[Interaction]:
-        batch: List[Interaction] = []
+    def _drain_batch(self) -> list[Interaction]:
+        batch: list[Interaction] = []
         while self._queue and len(batch) < self.batch_size:
             batch.append(self._queue.popleft())
         return batch
 
-    def _process_batch(self, batch: List[Interaction]) -> Dict[str, float]:
+    def _process_batch(self, batch: list[Interaction]) -> dict[str, float]:
         """Feed interactions into the personality model and compute simple metrics."""
         for interaction in batch:
             self.personality_model.observe(interaction)
@@ -128,7 +128,7 @@ class RealTimeLearningEngine:
 
         return metrics
 
-    def _check_for_anomalies(self, metrics: Dict[str, float]) -> None:
+    def _check_for_anomalies(self, metrics: dict[str, float]) -> None:
         """Log warnings when a batch looks problematic (low success, single-domain spam)."""
         # Existing heuristic-based anomaly detection
         if metrics["success_rate"] < self.anomaly_threshold:

@@ -1,9 +1,7 @@
 """System agent for health checks and service control."""
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime
-from typing import Dict
+from datetime import UTC, datetime
 
 import psutil
 
@@ -23,7 +21,7 @@ class SystemAgent:
     capabilities = ["health", "service_control", "metrics"]
     KEYWORDS = ("cpu", "memory", "service", "restart", "status", "health", "disk", "process")
 
-    def __init__(self, config: Dict[str, object] | None = None) -> None:
+    def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         self.bus = None
 
@@ -72,7 +70,7 @@ class SystemAgent:
             uptime = datetime.now() - boot_time
 
             payload = {
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(UTC).isoformat(),
                 "cpu": {
                     "percent": cpu_percent,
                     "count": cpu_count,

@@ -1,10 +1,9 @@
-import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
-from max_os.learning.realtime_engine import RealTimeLearningEngine
 from max_os.learning.personality import Interaction
+from max_os.learning.realtime_engine import RealTimeLearningEngine
 
 
 class StubPersonality:
@@ -18,7 +17,7 @@ class StubPersonality:
 @pytest.fixture()
 def sample_interaction():
     return Interaction(
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         user_input="test command",
         agent="system",
         response_length=42,

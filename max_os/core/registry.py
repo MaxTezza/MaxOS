@@ -1,11 +1,11 @@
-from typing import Dict, Type
 from max_os.agents.base import BaseAgent
+
 
 class AgentRegistry:
     """A simple registry for agent instances."""
 
     def __init__(self):
-        self._registry: Dict[str, BaseAgent] = {}
+        self._registry: dict[str, BaseAgent] = {}
 
     def register(self, agent: BaseAgent):
         """Registers an agent instance."""
@@ -15,7 +15,7 @@ class AgentRegistry:
         """Gets an agent instance by name."""
         return self._registry.get(agent_name)
 
-    def get_all(self) -> Dict[str, BaseAgent]:
+    def get_all(self) -> dict[str, BaseAgent]:
         """Gets all registered agent instances."""
         return self._registry
 

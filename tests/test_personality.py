@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from max_os.learning.personality import Interaction, UserPersonalityModel
