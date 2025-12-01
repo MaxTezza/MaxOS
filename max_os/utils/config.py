@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 DEFAULT_PATH = "config/settings.yaml"
 SAMPLE_PATH = "config/settings.example.yaml"
