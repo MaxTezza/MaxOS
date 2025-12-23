@@ -1,4 +1,5 @@
 """Developer agent for scaffolding code bases and automating workflows."""
+
 from __future__ import annotations
 
 import subprocess
@@ -73,7 +74,7 @@ class DeveloperAgent:
                 timeout=10,
             )
 
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
             branch_line = lines[0] if lines else ""
             file_lines = lines[1:] if len(lines) > 1 else []
 
@@ -146,17 +147,19 @@ class DeveloperAgent:
             )
 
             commits = []
-            for line in result.stdout.strip().split('\n'):
+            for line in result.stdout.strip().split("\n"):
                 if not line:
                     continue
-                parts = line.split('|', 3)
+                parts = line.split("|", 3)
                 if len(parts) == 4:
-                    commits.append({
-                        "hash": parts[0],
-                        "author": parts[1],
-                        "date": parts[2],
-                        "message": parts[3],
-                    })
+                    commits.append(
+                        {
+                            "hash": parts[0],
+                            "author": parts[1],
+                            "date": parts[2],
+                            "message": parts[3],
+                        }
+                    )
 
             return AgentResponse(
                 agent=self.name,
@@ -200,19 +203,21 @@ class DeveloperAgent:
 
             branches = []
             current = None
-            for line in result.stdout.strip().split('\n'):
+            for line in result.stdout.strip().split("\n"):
                 if not line:
                     continue
-                is_current = line.startswith('*')
+                is_current = line.startswith("*")
                 branch_name = line[2:].strip()
 
                 if is_current:
                     current = branch_name
 
-                branches.append({
-                    "name": branch_name,
-                    "current": is_current,
-                })
+                branches.append(
+                    {
+                        "name": branch_name,
+                        "current": is_current,
+                    }
+                )
 
             return AgentResponse(
                 agent=self.name,

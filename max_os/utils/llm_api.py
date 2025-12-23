@@ -29,9 +29,7 @@ class LLMAPI:
                     self.anthropic_client.messages.create,
                     model=model,
                     max_tokens=1024,
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ]
+                    messages=[{"role": "user", "content": prompt}],
                 )
                 return message.content[0].text
             except Exception as e:
@@ -43,10 +41,8 @@ class LLMAPI:
                 # Run synchronous OpenAI client in thread pool
                 chat_completion = await asyncio.to_thread(
                     self.openai_client.chat.completions.create,
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ],
-                    model="gpt-4o"
+                    messages=[{"role": "user", "content": prompt}],
+                    model="gpt-4o",
                 )
                 return chat_completion.choices[0].message.content
             except Exception as e:

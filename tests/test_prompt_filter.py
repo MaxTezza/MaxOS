@@ -79,4 +79,3 @@ def test_estimate_technical_complexity_increases_for_technical_terms(tmp_path: P
     )
 
     assert technical > simple
-

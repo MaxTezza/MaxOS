@@ -19,4 +19,5 @@ class AgentRegistry:
         """Gets all registered agent instances."""
         return self._registry
 
+
 AGENT_REGISTRY = AgentRegistry()

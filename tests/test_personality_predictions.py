@@ -1,4 +1,3 @@
-
 import pytest
 
 from max_os.learning.personality import UserPersonalityModel
@@ -21,8 +20,18 @@ def test_predicts_commit_and_push_from_git_signals(personality):
             "git": {
                 "dirty_count": 2,
                 "repos": [
-                    {"path": "/home/user/repo1", "staged": ["file1.py"], "modified": [], "untracked": []},
-                    {"path": "/home/user/repo2", "staged": [], "modified": ["main.py"], "untracked": []},
+                    {
+                        "path": "/home/user/repo1",
+                        "staged": ["file1.py"],
+                        "modified": [],
+                        "untracked": [],
+                    },
+                    {
+                        "path": "/home/user/repo2",
+                        "staged": [],
+                        "modified": ["main.py"],
+                        "untracked": [],
+                    },
                 ],
             }
         }

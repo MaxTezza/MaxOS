@@ -1,4 +1,5 @@
 """Thin CLI wrapper around the MaxOS orchestrator."""
+
 from __future__ import annotations
 
 import argparse
@@ -65,12 +66,14 @@ async def async_main() -> None:
             personality = orchestrator.personality.export_personality()
             print("=== User Personality Model ===")
             print("\nCommunication Style:")
-            for key, value in personality['communication_style'].items():
+            for key, value in personality["communication_style"].items():
                 print(f"  {key}: {value:.2f}")
             print("\nSkill Levels:")
-            for domain, level in personality['skill_levels'].items():
+            for domain, level in personality["skill_levels"].items():
                 print(f"  {domain}: {level:.2f}")
-            print(f"\nRecent Interactions: {len(orchestrator.personality.get_recent_interactions())}")
+            print(
+                f"\nRecent Interactions: {len(orchestrator.personality.get_recent_interactions())}"
+            )
             return
         else:
             print("Learning system is disabled")
@@ -79,6 +82,7 @@ async def async_main() -> None:
     if args.export_personality:
         if orchestrator.enable_learning:
             import json
+
             personality = orchestrator.personality.export_personality()
             args.export_personality.write_text(json.dumps(personality, indent=2))
             print(f"Personality exported to {args.export_personality}")

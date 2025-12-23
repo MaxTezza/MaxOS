@@ -152,9 +152,7 @@ class PredictiveAgentSpawner:
     def get_prediction_metrics(self) -> dict[str, float]:
         """Expose simple accuracy metrics for observability."""
         total = self.prediction_stats["total"]
-        accuracy = (
-            self.prediction_stats["hits"] / total if total else 0.0
-        )
+        accuracy = self.prediction_stats["hits"] / total if total else 0.0
         return {
             "total_predictions": total,
             "hits": self.prediction_stats["hits"],
@@ -162,7 +160,9 @@ class PredictiveAgentSpawner:
             "accuracy": round(accuracy, 3),
         }
 
-    def _plan_prediction(self, prediction: dict[str, Any], context: dict[str, Any]) -> Intent | None:
+    def _plan_prediction(
+        self, prediction: dict[str, Any], context: dict[str, Any]
+    ) -> Intent | None:
         """Convert a predicted task into a structured Intent using the shared planner."""
         task = prediction.get("task")
         if not task:
@@ -170,9 +170,7 @@ class PredictiveAgentSpawner:
 
         try:
             simple_context = {
-                k: str(v)
-                for k, v in context.items()
-                if isinstance(v, (str, int, float, bool))
+                k: str(v) for k, v in context.items() if isinstance(v, (str, int, float, bool))
             }
             return self.planner.plan(task, simple_context)
         except Exception as exc:  # pragma: no cover - defensive logging

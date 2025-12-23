@@ -1,4 +1,5 @@
 """Filesystem agent: responsible for file CRUD, search, organization."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -147,12 +148,14 @@ class FileSystemAgent:
                 if item.is_file():
                     stat = item.stat()
                     if stat.st_size >= min_size:
-                        results.append({
-                            "path": str(item),
-                            "size_bytes": stat.st_size,
-                            "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                            "modified": stat.st_mtime,
-                        })
+                        results.append(
+                            {
+                                "path": str(item),
+                                "size_bytes": stat.st_size,
+                                "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                                "modified": stat.st_mtime,
+                            }
+                        )
         except PermissionError as e:
             return AgentResponse(
                 agent=self.name,
@@ -207,13 +210,15 @@ class FileSystemAgent:
         try:
             for item in sorted(target_path.iterdir()):
                 stat = item.stat()
-                items.append({
-                    "name": item.name,
-                    "path": str(item),
-                    "type": "directory" if item.is_dir() else "file",
-                    "size_bytes": stat.st_size if item.is_file() else None,
-                    "modified": stat.st_mtime,
-                })
+                items.append(
+                    {
+                        "name": item.name,
+                        "path": str(item),
+                        "type": "directory" if item.is_dir() else "file",
+                        "size_bytes": stat.st_size if item.is_file() else None,
+                        "modified": stat.st_mtime,
+                    }
+                )
         except PermissionError as e:
             return AgentResponse(
                 agent=self.name,

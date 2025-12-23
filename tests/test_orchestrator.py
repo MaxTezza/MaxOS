@@ -7,7 +7,7 @@ from max_os.core.orchestrator import AIOperatingSystem
 
 
 @pytest.mark.asyncio
-@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+@patch("redis.from_url", return_value=fakeredis.FakeRedis())
 async def test_filesystem_routing(mock_redis):
     orchestrator = AIOperatingSystem()
     response = await orchestrator.handle_text("Please archive the Reports folder")
@@ -19,7 +19,7 @@ async def test_filesystem_routing(mock_redis):
 
 
 @pytest.mark.asyncio
-@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+@patch("redis.from_url", return_value=fakeredis.FakeRedis())
 async def test_developer_routing(mock_redis):
     orchestrator = AIOperatingSystem()
     response = await orchestrator.handle_text("Create a FastAPI project and push to git")
@@ -31,7 +31,7 @@ async def test_developer_routing(mock_redis):
 
 
 @pytest.mark.asyncio
-@patch('redis.from_url', return_value=fakeredis.FakeRedis())
+@patch("redis.from_url", return_value=fakeredis.FakeRedis())
 async def test_default_fallback(mock_redis):
     orchestrator = AIOperatingSystem()
     response = await orchestrator.handle_text("What's the weather?")
