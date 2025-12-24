@@ -33,11 +33,14 @@ class EntityExtractor:
         """
         Parse LLM JSON response into structured data.
         
+        Handles markdown code block wrapping (```json ... ```) and provides
+        default values for missing optional fields (confidence, entities, summary).
+        
         Args:
             response_text: Raw text response from LLM
             
         Returns:
-            Parsed dictionary or None if parsing fails
+            Parsed dictionary with required fields, or None if parsing fails
         """
         try:
             # Try to extract JSON from response

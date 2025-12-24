@@ -47,15 +47,24 @@ class AIOperatingSystem:
         self.planner = IntentPlanner()
         
         # Initialize LLM API for intent classification
-        orchestrator_config = self.settings.orchestrator
-        llm_config = self.settings.llm
+        orchestrator_config = getattr(self.settings, 'orchestrator', None)
+        llm_config = getattr(self.settings, 'llm', None)
         
         # Get LLM configuration with fallback to defaults
-        timeout = getattr(llm_config, 'timeout_seconds', 10)
-        retry_attempts = getattr(llm_config, 'retry_attempts', 3)
-        temperature = getattr(orchestrator_config, 'temperature', 0.1)
-        max_tokens = getattr(orchestrator_config, 'max_tokens', 500)
-        fallback_to_rules = getattr(orchestrator_config, 'fallback_to_rules', True)
+        timeout = 10
+        retry_attempts = 3
+        temperature = 0.1
+        max_tokens = 500
+        fallback_to_rules = True
+        
+        if llm_config:
+            timeout = getattr(llm_config, 'timeout_seconds', timeout)
+            retry_attempts = getattr(llm_config, 'retry_attempts', retry_attempts)
+        
+        if orchestrator_config:
+            temperature = getattr(orchestrator_config, 'temperature', temperature)
+            max_tokens = getattr(orchestrator_config, 'max_tokens', max_tokens)
+            fallback_to_rules = getattr(orchestrator_config, 'fallback_to_rules', fallback_to_rules)
         
         try:
             self.llm_api = LLMAPI(

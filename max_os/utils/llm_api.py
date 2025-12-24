@@ -52,9 +52,14 @@ class LLMAPI:
             
         Returns:
             Generated text response
+            
+        Raises:
+            RuntimeError: If all retry attempts fail or timeout
         """
         max_tokens = max_tokens or self.max_tokens
         temperature = temperature or self.temperature
+        
+        last_exception = None
         
         for attempt in range(self.retry_attempts):
             try:
@@ -64,19 +69,18 @@ class LLMAPI:
                     timeout=self.timeout_seconds
                 )
                 return response
-            except asyncio.TimeoutError:
+            except asyncio.TimeoutError as e:
+                last_exception = e
                 self.logger.warning(
                     "LLM API timeout",
                     extra={"attempt": attempt + 1, "timeout": self.timeout_seconds}
                 )
-                if attempt == self.retry_attempts - 1:
-                    raise
             except Exception as e:
+                last_exception = e
                 self.logger.error("LLM API error", extra={"error": str(e), "attempt": attempt + 1})
-                if attempt == self.retry_attempts - 1:
-                    raise
         
-        return "Failed to generate response after retries."
+        # All retries failed, raise the last exception
+        raise RuntimeError(f"Failed to generate response after {self.retry_attempts} attempts") from last_exception
 
     async def _generate_text_internal(
         self,
