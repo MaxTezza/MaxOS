@@ -75,7 +75,11 @@ class MultiAgentOrchestrator:
         # Creative uses Pro for better creative output
         creative_llm = GeminiClient(
             model="gemini-1.5-pro",
-            api_key=self.manager._model._client._api_key if hasattr(self.manager._model, '_client') else None,
+            api_key=(
+                self.manager._model._client._api_key
+                if hasattr(self.manager._model, "_client")
+                else None
+            ),
             temperature=0.8,
             max_tokens=2048,
         )
@@ -206,7 +210,7 @@ Return ONLY a JSON array with no additional text: ["agent1", "agent2", ...]
 
         # Handle any agent failures gracefully
         agent_results = []
-        for name, result in zip(agent_names, results):
+        for name, result in zip(agent_names, results, strict=False):
             if isinstance(result, Exception):
                 agent_results.append(
                     AgentResult(
@@ -386,7 +390,9 @@ Round {round_num + 1} of debate:
         ]
         return "\n".join(other_answers)
 
-    async def _check_consensus(self, query: str, debate_rounds: list[list[AgentDebateResponse]]) -> ConsensusCheck:
+    async def _check_consensus(
+        self, query: str, debate_rounds: list[list[AgentDebateResponse]]
+    ) -> ConsensusCheck:
         """Manager checks if agents have reached consensus.
         
         Args:
