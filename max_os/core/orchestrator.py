@@ -50,6 +50,24 @@ class AIOperatingSystem:
         self.last_context: dict[str, object] | None = None
         self._learning_tasks = []
 
+        # Multi-agent orchestrator (optional)
+        self.multi_agent = None
+        if self.settings.multi_agent.get("enabled", False):
+            try:
+                from max_os.core.multi_agent_orchestrator import MultiAgentOrchestrator
+                
+                # Build config for multi-agent system
+                ma_config = {
+                    "google_api_key": self.settings.multi_agent.get("google_api_key") 
+                                     or self.settings.llm.get("google_api_key"),
+                    "max_debate_rounds": self.settings.multi_agent.get("max_debate_rounds", 3),
+                    "consensus_threshold": self.settings.multi_agent.get("consensus_threshold", 0.8),
+                }
+                self.multi_agent = MultiAgentOrchestrator(ma_config)
+                self.logger.info("Multi-agent orchestrator enabled")
+            except Exception as e:
+                self.logger.warning("Failed to initialize multi-agent orchestrator", error=str(e))
+
         # Learning system
         self.enable_learning = enable_learning
         if self.enable_learning:
@@ -134,6 +152,39 @@ class AIOperatingSystem:
             active_window = context["signals"].get("applications", {}).get("active_window")
             if active_window:
                 context.setdefault("active_window", active_window)
+
+        # Check if we should route to multi-agent system
+        if (
+            self.multi_agent
+            and self.settings.multi_agent.get("route_complex_queries", True)
+            and self._is_complex_query(text)
+        ):
+            try:
+                result = await self.multi_agent.process_with_debate(
+                    user_query=text, context=context, show_work=True
+                )
+                
+                # Convert to AgentResponse
+                response = AgentResponse(
+                    agent="multi_agent",
+                    status="success",
+                    message=result.final_answer,
+                    payload={
+                        "agents_used": result.agents_used,
+                        "confidence": result.confidence,
+                        "work_logs": result.agent_work_logs,
+                        "debate_log": result.debate_log,
+                        "manager_review": result.manager_review,
+                    },
+                )
+                
+                self.memory.add_user(text)
+                self.memory.add_agent(response)
+                return response
+                
+            except Exception as e:
+                self.logger.warning("Multi-agent processing failed, falling back", error=str(e))
+                # Fall through to normal processing
 
         self.memory.add_user(text)
         intent = await self._plan_intent(text, context)
@@ -247,3 +298,30 @@ class AIOperatingSystem:
         except Exception:
             self.logger.exception("Failed to gather context signals")
             return {}
+
+    def _is_complex_query(self, text: str) -> bool:
+        """Determine if query needs multi-agent processing.
+        
+        Args:
+            text: User query
+            
+        Returns:
+            True if query is complex
+        """
+        complex_keywords = [
+            "plan",
+            "analyze",
+            "compare",
+            "research",
+            "should i",
+            "what if",
+            "help me decide",
+            "evaluate",
+            "assessment",
+            "recommendation",
+            "strategy",
+            "proposal",
+        ]
+        text_lower = text.lower()
+        return any(kw in text_lower for kw in complex_keywords)
+

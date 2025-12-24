@@ -25,6 +25,7 @@ class Settings:
     policy: dict[str, Any] = field(default_factory=dict)
     logging: dict[str, Any] = field(default_factory=dict)
     telemetry: dict[str, Any] = field(default_factory=dict)
+    multi_agent: dict[str, Any] = field(default_factory=dict)
 
 
 def load_settings(path: str | None = None) -> Settings:
