@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from max_os.core.orchestrator import AIOperatingSystem
+from max_os.core.rollback import RollbackManager
+from max_os.core.transactions import TransactionLogger
 
 
 def format_payload(payload: Any) -> str:
@@ -55,9 +57,102 @@ async def async_main() -> None:
         action="store_true",
         help="Print recent real-time learning batch metrics.",
     )
+    parser.add_argument(
+        "--rollback",
+        type=int,
+        metavar="TRANSACTION_ID",
+        help="Rollback a transaction by ID.",
+    )
+    parser.add_argument(
+        "--show-transactions",
+        action="store_true",
+        help="List recent transactions.",
+    )
+    parser.add_argument(
+        "--show-trash",
+        action="store_true",
+        help="List files in trash.",
+    )
+    parser.add_argument(
+        "--restore",
+        type=int,
+        metavar="TRANSACTION_ID",
+        help="Restore files from trash by transaction ID.",
+    )
     args = parser.parse_args()
 
     orchestrator = AIOperatingSystem()
+    
+    # Handle rollback operations
+    if args.rollback is not None:
+        rollback_manager = RollbackManager()
+        success, message = rollback_manager.rollback_transaction(args.rollback)
+        if success:
+            print(f"✓ {message}")
+            return
+        else:
+            print(f"✗ {message}")
+            return
+    
+    # Handle restore operations
+    if args.restore is not None:
+        rollback_manager = RollbackManager()
+        transaction_logger = TransactionLogger()
+        transaction = transaction_logger.get_transaction(args.restore)
+        
+        if transaction is None:
+            print(f"✗ Transaction {args.restore} not found")
+            return
+        
+        if transaction["operation"] != "delete":
+            print(f"✗ Transaction {args.restore} is not a delete operation (cannot restore)")
+            return
+        
+        success, message = rollback_manager.rollback_transaction(args.restore)
+        if success:
+            print(f"✓ {message}")
+            return
+        else:
+            print(f"✗ {message}")
+            return
+    
+    # Handle transaction listing
+    if args.show_transactions:
+        transaction_logger = TransactionLogger()
+        transactions = transaction_logger.get_recent_transactions(days=30, limit=50)
+        
+        if not transactions:
+            print("No recent transactions found")
+            return
+        
+        print(f"\n{'ID':<8} {'Timestamp':<20} {'Operation':<10} {'Status':<12} {'Approved'}")
+        print("=" * 70)
+        for tx in transactions:
+            timestamp = tx["timestamp"][:19].replace("T", " ")
+            approved = "✓" if tx["user_approved"] else "✗"
+            print(f"{tx['id']:<8} {timestamp:<20} {tx['operation']:<10} {tx['status']:<12} {approved}")
+        
+        return
+    
+    # Handle trash listing
+    if args.show_trash:
+        rollback_manager = RollbackManager()
+        trash_files = rollback_manager.list_trash()
+        
+        if not trash_files:
+            print("Trash is empty")
+            return
+        
+        print(f"\n{'TX ID':<8} {'Original Path':<40} {'Size':<12} {'Timestamp'}")
+        print("=" * 90)
+        for item in trash_files:
+            size_mb = item["size_bytes"] / (1024 * 1024)
+            size_str = f"{size_mb:.1f} MB" if size_mb >= 1 else f"{item['size_bytes']} B"
+            timestamp = item["timestamp"][:19].replace("T", " ")
+            orig_path = item["original_path"][:40]
+            print(f"{item['transaction_id']:<8} {orig_path:<40} {size_str:<12} {timestamp}")
+        
+        return
 
     # Handle personality inspection commands
     if args.show_personality:

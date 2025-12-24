@@ -15,6 +15,20 @@ agents:
       - "/home"
       - "/srv"
     require_confirmation_over_mb: 50
+    confirmation:
+      enabled: true
+      require_for_operations:
+        - copy
+        - move
+        - delete
+      auto_approve_under_mb: 10  # Auto-approve operations < 10MB
+    rollback:
+      enabled: true
+      trash_retention_days: 30
+      max_trash_size_gb: 50
+    transactions:
+      db_path: "~/.maxos/transactions.db"
+      log_all_operations: true
   system:
     allowed_units:
       - "ssh.service"
