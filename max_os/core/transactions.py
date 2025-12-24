@@ -208,8 +208,9 @@ class TransactionLogger:
         Returns:
             List of transaction dicts
         """
-        cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        cutoff = cutoff.replace(day=cutoff.day - days)
+        from datetime import timedelta
+        
+        cutoff = datetime.now() - timedelta(days=days)
         cutoff_str = cutoff.isoformat()
 
         with sqlite3.connect(self.db_path) as conn:

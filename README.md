@@ -93,6 +93,55 @@ uvicorn max_os.interfaces.api.main:app --reload
 - `--dump-memory <path>` writes the transcript to disk for audits or follow-up prompts.
 - `--show-personality` displays your learned personality model and preferences.
 - `--export-personality <path>` exports personality model to JSON file.
+- `--rollback <transaction_id>` rollback a filesystem operation.
+- `--show-transactions` list recent filesystem transactions.
+- `--show-trash` list files in trash that can be recovered.
+- `--restore <transaction_id>` restore files from trash.
+
+## New in Phase 2: Confirmation & Rollback Framework
+
+MaxOS now includes a comprehensive confirmation and rollback system for safe filesystem operations:
+
+**Features:**
+- **Dry-run previews** - See what will happen before operations execute
+- **User confirmation** - Approve/deny operations with detailed previews
+- **Transaction logging** - All operations logged in SQLite database
+- **Rollback support** - Undo copy, move, delete, and mkdir operations
+- **Trash system** - Deleted files moved to `~/.maxos/trash/` with 30-day retention
+- **Checksum verification** - SHA256 checksums ensure data integrity
+
+**Example Workflow:**
+```bash
+# Operations require confirmation (unless auto-approved for small files)
+# Copy operation shows preview and prompts for approval
+
+# List recent transactions
+python -m max_os.interfaces.cli.main --show-transactions
+
+# View trash contents
+python -m max_os.interfaces.cli.main --show-trash
+
+# Rollback a transaction (undo copy/move/mkdir)
+python -m max_os.interfaces.cli.main --rollback 123
+
+# Restore deleted files from trash
+python -m max_os.interfaces.cli.main --restore 124
+```
+
+**Configuration:**
+Edit `config/settings.yaml`:
+```yaml
+agents:
+  filesystem:
+    confirmation:
+      enabled: true
+      require_for_operations: [copy, move, delete]
+      auto_approve_under_mb: 10  # Auto-approve operations < 10MB
+    rollback:
+      enabled: true
+      trash_retention_days: 30
+      max_trash_size_gb: 50
+```
 
 ## Repository Layout
 ```
