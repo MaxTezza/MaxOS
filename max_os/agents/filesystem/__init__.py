@@ -38,17 +38,17 @@ class FileSystemAgent:
         self.config = config or {}
         whitelist = self.config.get("root_whitelist", ["/home"])
         self.allowed_roots = [Path(path).resolve() for path in whitelist]
-        
+
         # Initialize confirmation and rollback systems
         confirmation_config = self.config.get("confirmation", {})
         self.confirmation_handler = ConfirmationHandler(confirmation_config)
-        
+
         rollback_config = self.config.get("rollback", {})
         self.rollback_manager = RollbackManager(
             retention_days=rollback_config.get("trash_retention_days", 30),
             max_trash_size_gb=rollback_config.get("max_trash_size_gb", 50),
         )
-        
+
         self.transaction_logger = TransactionLogger(
             db_path=self.config.get("transactions", {}).get("db_path")
         )
@@ -263,10 +263,10 @@ class FileSystemAgent:
         # Extract source and destination from request text
         # For now, return not_implemented with instructions
         # A full implementation would need explicit source/dest paths from request.context
-        
+
         source_path = request.context.get("source_path")
         dest_path = request.context.get("dest_path")
-        
+
         if not source_path or not dest_path:
             return AgentResponse(
                 agent=self.name,
@@ -280,10 +280,10 @@ class FileSystemAgent:
                     },
                 },
             )
-        
+
         source = Path(source_path).expanduser()
         dest = Path(dest_path).expanduser()
-        
+
         # Validate paths
         if not self._is_path_allowed(source):
             return AgentResponse(
@@ -292,7 +292,7 @@ class FileSystemAgent:
                 message=f"Source path {source} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if not self._is_path_allowed(dest):
             return AgentResponse(
                 agent=self.name,
@@ -300,7 +300,7 @@ class FileSystemAgent:
                 message=f"Destination path {dest} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if not source.exists():
             return AgentResponse(
                 agent=self.name,
@@ -308,25 +308,29 @@ class FileSystemAgent:
                 message=f"Source path {source} does not exist",
                 payload={"source_path": str(source)},
             )
-        
+
         # Gather files to copy
         files_to_copy = []
         if source.is_file():
-            files_to_copy.append({
-                "name": source.name,
-                "path": str(source),
-                "size_bytes": source.stat().st_size,
-            })
+            files_to_copy.append(
+                {
+                    "name": source.name,
+                    "path": str(source),
+                    "size_bytes": source.stat().st_size,
+                }
+            )
         else:
             # Directory - recursively gather files
             for item in source.rglob("*"):
                 if item.is_file():
-                    files_to_copy.append({
-                        "name": str(item.relative_to(source)),
-                        "path": str(item),
-                        "size_bytes": item.stat().st_size,
-                    })
-        
+                    files_to_copy.append(
+                        {
+                            "name": str(item.relative_to(source)),
+                            "path": str(item),
+                            "size_bytes": item.stat().st_size,
+                        }
+                    )
+
         # Generate preview
         preview = self.confirmation_handler.generate_preview(
             operation="copy",
@@ -334,11 +338,11 @@ class FileSystemAgent:
             destination=dest,
             files=files_to_copy,
         )
-        
+
         # Request confirmation
         mode = request.context.get("confirmation_mode", "cli")
         approved, preview = self.confirmation_handler.request_confirmation(preview, mode=mode)
-        
+
         if not approved:
             return AgentResponse(
                 agent=self.name,
@@ -346,7 +350,7 @@ class FileSystemAgent:
                 message="Copy operation cancelled by user",
                 payload={"preview": preview.__dict__},
             )
-        
+
         # Create transaction
         transaction_id = self.transaction_logger.log_transaction(
             operation="copy",
@@ -359,7 +363,7 @@ class FileSystemAgent:
                 "total_size_bytes": preview.total_size_bytes,
             },
         )
-        
+
         # Perform copy
         copied_files = []
         try:
@@ -367,23 +371,27 @@ class FileSystemAgent:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(source), str(dest))
                 checksum = self.rollback_manager.calculate_checksum(dest)
-                copied_files.append({
-                    "source": str(source),
-                    "destination": str(dest),
-                    "checksum": checksum,
-                })
+                copied_files.append(
+                    {
+                        "source": str(source),
+                        "destination": str(dest),
+                        "checksum": checksum,
+                    }
+                )
             else:
                 shutil.copytree(str(source), str(dest), dirs_exist_ok=True)
                 # Calculate checksums for copied files
                 for item in dest.rglob("*"):
                     if item.is_file():
                         checksum = self.rollback_manager.calculate_checksum(item)
-                        copied_files.append({
-                            "source": str(source / item.relative_to(dest)),
-                            "destination": str(item),
-                            "checksum": checksum,
-                        })
-            
+                        copied_files.append(
+                            {
+                                "source": str(source / item.relative_to(dest)),
+                                "destination": str(item),
+                                "checksum": checksum,
+                            }
+                        )
+
             # Update transaction
             self.transaction_logger.update_transaction(
                 transaction_id,
@@ -396,7 +404,7 @@ class FileSystemAgent:
                     "copied_files": copied_files,
                 },
             )
-            
+
             return AgentResponse(
                 agent=self.name,
                 status="success",
@@ -423,7 +431,7 @@ class FileSystemAgent:
         # Extract source and destination from request context
         source_path = request.context.get("source_path")
         dest_path = request.context.get("dest_path")
-        
+
         if not source_path or not dest_path:
             return AgentResponse(
                 agent=self.name,
@@ -437,10 +445,10 @@ class FileSystemAgent:
                     },
                 },
             )
-        
+
         source = Path(source_path).expanduser()
         dest = Path(dest_path).expanduser()
-        
+
         # Validate paths
         if not self._is_path_allowed(source):
             return AgentResponse(
@@ -449,7 +457,7 @@ class FileSystemAgent:
                 message=f"Source path {source} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if not self._is_path_allowed(dest):
             return AgentResponse(
                 agent=self.name,
@@ -457,7 +465,7 @@ class FileSystemAgent:
                 message=f"Destination path {dest} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if not source.exists():
             return AgentResponse(
                 agent=self.name,
@@ -465,24 +473,28 @@ class FileSystemAgent:
                 message=f"Source path {source} does not exist",
                 payload={"source_path": str(source)},
             )
-        
+
         # Gather files to move
         files_to_move = []
         if source.is_file():
-            files_to_move.append({
-                "name": source.name,
-                "path": str(source),
-                "size_bytes": source.stat().st_size,
-            })
+            files_to_move.append(
+                {
+                    "name": source.name,
+                    "path": str(source),
+                    "size_bytes": source.stat().st_size,
+                }
+            )
         else:
             for item in source.rglob("*"):
                 if item.is_file():
-                    files_to_move.append({
-                        "name": str(item.relative_to(source)),
-                        "path": str(item),
-                        "size_bytes": item.stat().st_size,
-                    })
-        
+                    files_to_move.append(
+                        {
+                            "name": str(item.relative_to(source)),
+                            "path": str(item),
+                            "size_bytes": item.stat().st_size,
+                        }
+                    )
+
         # Generate preview
         preview = self.confirmation_handler.generate_preview(
             operation="move",
@@ -490,11 +502,11 @@ class FileSystemAgent:
             destination=dest,
             files=files_to_move,
         )
-        
+
         # Request confirmation
         mode = request.context.get("confirmation_mode", "cli")
         approved, preview = self.confirmation_handler.request_confirmation(preview, mode=mode)
-        
+
         if not approved:
             return AgentResponse(
                 agent=self.name,
@@ -502,15 +514,21 @@ class FileSystemAgent:
                 message="Move operation cancelled by user",
                 payload={"preview": preview.__dict__},
             )
-        
+
         # Create transaction with rollback info
         moved_files = []
         for file_info in files_to_move:
-            moved_files.append({
-                "original_path": file_info["path"],
-                "destination": str(dest / Path(file_info["path"]).relative_to(source)) if source.is_dir() else str(dest),
-            })
-        
+            moved_files.append(
+                {
+                    "original_path": file_info["path"],
+                    "destination": (
+                        str(dest / Path(file_info["path"]).relative_to(source))
+                        if source.is_dir()
+                        else str(dest)
+                    ),
+                }
+            )
+
         transaction_id = self.transaction_logger.log_transaction(
             operation="move",
             status="pending",
@@ -525,15 +543,15 @@ class FileSystemAgent:
                 "moved_files": moved_files,
             },
         )
-        
+
         # Perform move
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(source), str(dest))
-            
+
             # Update transaction
             self.transaction_logger.update_transaction(transaction_id, status="completed")
-            
+
             return AgentResponse(
                 agent=self.name,
                 status="success",
@@ -559,7 +577,7 @@ class FileSystemAgent:
         """Create a new directory."""
         # Extract path from request context
         dir_path = request.context.get("path")
-        
+
         if not dir_path:
             return AgentResponse(
                 agent=self.name,
@@ -570,9 +588,9 @@ class FileSystemAgent:
                     "requires": {"path": "Path to directory to create"},
                 },
             )
-        
+
         target_path = Path(dir_path).expanduser()
-        
+
         # Validate path
         if not self._is_path_allowed(target_path):
             return AgentResponse(
@@ -581,7 +599,7 @@ class FileSystemAgent:
                 message=f"Path {target_path} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if target_path.exists():
             return AgentResponse(
                 agent=self.name,
@@ -589,7 +607,7 @@ class FileSystemAgent:
                 message=f"Path {target_path} already exists",
                 payload={"path": str(target_path)},
             )
-        
+
         # Generate preview
         preview = self.confirmation_handler.generate_preview(
             operation="mkdir",
@@ -597,11 +615,11 @@ class FileSystemAgent:
             files=[],
             metadata={"path": str(target_path)},
         )
-        
+
         # Request confirmation
         mode = request.context.get("confirmation_mode", "cli")
         approved, preview = self.confirmation_handler.request_confirmation(preview, mode=mode)
-        
+
         if not approved:
             return AgentResponse(
                 agent=self.name,
@@ -609,7 +627,7 @@ class FileSystemAgent:
                 message="Directory creation cancelled by user",
                 payload={"preview": preview.__dict__},
             )
-        
+
         # Create transaction
         transaction_id = self.transaction_logger.log_transaction(
             operation="mkdir",
@@ -617,14 +635,14 @@ class FileSystemAgent:
             user_approved=approved,
             metadata={"path": str(target_path)},
         )
-        
+
         # Create directory
         try:
             target_path.mkdir(parents=True, exist_ok=False)
-            
+
             # Update transaction
             self.transaction_logger.update_transaction(transaction_id, status="completed")
-            
+
             return AgentResponse(
                 agent=self.name,
                 status="success",
@@ -647,7 +665,7 @@ class FileSystemAgent:
         """Delete files or directories (moves to trash)."""
         # Extract path from request context
         target_path_str = request.context.get("path")
-        
+
         if not target_path_str:
             return AgentResponse(
                 agent=self.name,
@@ -658,9 +676,9 @@ class FileSystemAgent:
                     "requires": {"path": "Path to file or directory to delete"},
                 },
             )
-        
+
         target_path = Path(target_path_str).expanduser()
-        
+
         # Validate path
         if not self._is_path_allowed(target_path):
             return AgentResponse(
@@ -669,7 +687,7 @@ class FileSystemAgent:
                 message=f"Path {target_path} is outside allowed roots",
                 payload={"allowed_roots": [str(r) for r in self.allowed_roots]},
             )
-        
+
         if not target_path.exists():
             return AgentResponse(
                 agent=self.name,
@@ -677,24 +695,28 @@ class FileSystemAgent:
                 message=f"Path {target_path} does not exist",
                 payload={"path": str(target_path)},
             )
-        
+
         # Gather files to delete
         files_to_delete = []
         if target_path.is_file():
-            files_to_delete.append({
-                "name": target_path.name,
-                "path": str(target_path),
-                "size_bytes": target_path.stat().st_size,
-            })
+            files_to_delete.append(
+                {
+                    "name": target_path.name,
+                    "path": str(target_path),
+                    "size_bytes": target_path.stat().st_size,
+                }
+            )
         else:
             for item in target_path.rglob("*"):
                 if item.is_file():
-                    files_to_delete.append({
-                        "name": str(item.relative_to(target_path)),
-                        "path": str(item),
-                        "size_bytes": item.stat().st_size,
-                    })
-        
+                    files_to_delete.append(
+                        {
+                            "name": str(item.relative_to(target_path)),
+                            "path": str(item),
+                            "size_bytes": item.stat().st_size,
+                        }
+                    )
+
         # Generate preview
         preview = self.confirmation_handler.generate_preview(
             operation="delete",
@@ -702,11 +724,11 @@ class FileSystemAgent:
             files=files_to_delete,
             metadata={"will_move_to_trash": True},
         )
-        
+
         # Request confirmation
         mode = request.context.get("confirmation_mode", "cli")
         approved, preview = self.confirmation_handler.request_confirmation(preview, mode=mode)
-        
+
         if not approved:
             return AgentResponse(
                 agent=self.name,
@@ -714,7 +736,7 @@ class FileSystemAgent:
                 message="Delete operation cancelled by user",
                 payload={"preview": preview.__dict__},
             )
-        
+
         # Create transaction
         transaction_id = self.transaction_logger.log_transaction(
             operation="delete",
@@ -726,13 +748,13 @@ class FileSystemAgent:
                 "total_size_bytes": preview.total_size_bytes,
             },
         )
-        
+
         # Move to trash
         try:
             trash_path = self.rollback_manager.move_to_trash(
                 target_path, transaction_id, original_path=target_path
             )
-            
+
             # Update transaction
             self.transaction_logger.update_transaction(
                 transaction_id,
@@ -742,7 +764,7 @@ class FileSystemAgent:
                     "original_path": str(target_path),
                 },
             )
-            
+
             return AgentResponse(
                 agent=self.name,
                 status="success",
@@ -780,11 +802,8 @@ class FileSystemAgent:
         if not target_path.exists():
             # Check if file might be in trash
             trash_files = self.rollback_manager.list_trash()
-            matching_trash = [
-                f for f in trash_files
-                if f["original_path"] == str(target_path)
-            ]
-            
+            matching_trash = [f for f in trash_files if f["original_path"] == str(target_path)]
+
             if matching_trash:
                 return AgentResponse(
                     agent=self.name,
@@ -794,10 +813,10 @@ class FileSystemAgent:
                         "path": str(target_path),
                         "in_trash": True,
                         "trash_entries": matching_trash,
-                        "recovery_hint": f"Use --restore <transaction_id> to recover",
+                        "recovery_hint": "Use --restore <transaction_id> to recover",
                     },
                 )
-            
+
             return AgentResponse(
                 agent=self.name,
                 status="error",
