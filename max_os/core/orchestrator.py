@@ -27,6 +27,7 @@ from max_os.learning.prediction import PredictiveAgentSpawner
 from max_os.learning.prompt_filter import PromptOptimizationFilter
 from max_os.learning.realtime_engine import RealTimeLearningEngine
 from max_os.utils.config import Settings, load_settings
+from max_os.utils.llm_api import LLMAPI
 from max_os.utils.logging import configure_logging
 
 
@@ -44,7 +45,41 @@ class AIOperatingSystem:
         configure_logging(self.settings)
         self.logger = structlog.get_logger("max_os.orchestrator")
         self.planner = IntentPlanner()
-        self.intent_classifier = IntentClassifier(self.planner)  # Initialize IntentClassifier
+        
+        # Initialize LLM API for intent classification
+        orchestrator_config = self.settings.orchestrator
+        llm_config = self.settings.llm
+        
+        # Get LLM configuration with fallback to defaults
+        timeout = getattr(llm_config, 'timeout_seconds', 10)
+        retry_attempts = getattr(llm_config, 'retry_attempts', 3)
+        temperature = getattr(orchestrator_config, 'temperature', 0.1)
+        max_tokens = getattr(orchestrator_config, 'max_tokens', 500)
+        fallback_to_rules = getattr(orchestrator_config, 'fallback_to_rules', True)
+        
+        try:
+            self.llm_api = LLMAPI(
+                timeout_seconds=timeout,
+                retry_attempts=retry_attempts,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            if self.llm_api.is_available():
+                self.logger.info("LLM API initialized for intent classification")
+            else:
+                self.logger.info("No LLM API keys found, using keyword rules only")
+                self.llm_api = None
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize LLM API: {e}, using keyword rules only")
+            self.llm_api = None
+        
+        # Initialize IntentClassifier with LLM support
+        self.intent_classifier = IntentClassifier(
+            planner=self.planner,
+            llm_api=self.llm_api,
+            fallback_to_rules=fallback_to_rules,
+        )
+        
         self.agents: list[BaseAgent] = agents or self._init_agents()
         self.memory = ConversationMemory(limit=50, settings=self.settings)
         self.last_context: dict[str, object] | None = None
