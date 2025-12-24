@@ -28,7 +28,9 @@ dependencies = [
   "watchdog>=2.3.1",
   "structlog>=24.2",
   "scikit-learn>=1.5",
-  "python-dotenv>=1.0.0"
+  "python-dotenv>=1.0.0",
+  "grpcio>=1.60",
+  "grpcio-tools>=1.60"
 ]
 
 [project.optional-dependencies]
@@ -38,7 +40,8 @@ dev = [
   "pytest-cov>=5.0",
   "ruff>=0.6",
   "black>=24.8",
-  "fakeredis>=2.20"
+  "fakeredis>=2.20",
+  "grpcio-testing>=1.60"
 ]
 systemd = [
   "dbus-python>=1.3"

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package maxos;
+
+service MaxOSService {
+  rpc HandleText(TextRequest) returns (AgentResponse);
+  rpc StreamOperations(TextRequest) returns (stream OperationUpdate);
+  rpc GetSystemHealth(HealthRequest) returns (HealthResponse);
+}
+
+message TextRequest {
+  string text = 1;
+  map<string, string> context = 2;
+}
+
+message AgentResponse {
+  string agent = 1;
+  string status = 2;
+  string message = 3;
+  map<string, string> payload = 4;
+}
+
+message OperationUpdate {
+  int32 progress = 1;
+  string status = 2;
+  string message = 3;
+}
+
+message HealthRequest {
+}
+
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+  map<string, string> metrics = 3;
+}
