@@ -11,6 +11,10 @@ Natural-language control plane for Linux that routes user intents to trusted aut
 
 ## Current Capabilities
 - **Modular Python package** with a central orchestrator and pluggable agents (filesystem, system health, developer helper, network diagnostics).
+- **Multi-Interface Support**:
+  - **REST API**: FastAPI-based HTTP interface on port 8000
+  - **gRPC API**: High-performance gRPC interface with streaming support on port 50051 (see [docs/GRPC_API.md](docs/GRPC_API.md))
+  - **CLI**: Interactive command-line interface
 - **Four fully functional agents** with real system integration:
   - **FileSystemAgent**: Search files by pattern/size, list directories, get file info with safety checks
   - **SystemAgent**: Real-time CPU/memory/disk metrics, process listing, systemd service status, system health monitoring
@@ -27,7 +31,7 @@ Natural-language control plane for Linux that routes user intents to trusted aut
 - **CLI prototype** that parses intents and forwards them to the best-matching agent with structured responses, including a short-lived conversation memory buffer, JSON output mode, and transcript export.
 - **Configuration loader** for environment + YAML settings, including placeholders for API keys and policy controls, and an LLM adapter that falls back to local stubs when keys are missing.
 - **Structured logging** helper wired into the orchestrator so every request/response is audit-ready even without remote services.
-- **Documentation set**: `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/AGENT_IMPLEMENTATION.md`, `docs/PREDICTIVE_AGENT_ARCHITECTURE.md`, `docs/LEARNING_SYSTEM_DEMO.md`
+- **Documentation set**: `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/AGENT_IMPLEMENTATION.md`, `docs/PREDICTIVE_AGENT_ARCHITECTURE.md`, `docs/LEARNING_SYSTEM_DEMO.md`, `docs/GRPC_API.md`
 
 ## Getting Started
 
@@ -88,6 +92,13 @@ python -m max_os.interfaces.cli.main --export-personality ~/my_personality.json
 ```bash
 uvicorn max_os.interfaces.api.main:app --reload
 ```
+
+**Running the gRPC API**
+```bash
+python -m max_os.interfaces.grpc.server
+```
+
+For detailed gRPC API documentation and examples, see [docs/GRPC_API.md](docs/GRPC_API.md).
 
 **CLI Flags**
 - `--json` prints only the payload (great for piping into `jq`).
