@@ -1,0 +1,13 @@
+[Unit]
+Description=MaxOS gRPC Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/mtez/ai-os/.venv/bin/python -m max_os.interfaces.grpc.server
+Restart=on-failure
+User=mtez
+Group=mtez
+
+[Install]
+WantedBy=multi-user.target
