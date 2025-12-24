@@ -31,12 +31,12 @@ class LLMClient:
 
     def generate(self, system_prompt: str, user_prompt: str, max_tokens: int | None = None) -> str:
         """Generate LLM response synchronously (deprecated, use generate_async).
-        
+
         Args:
             system_prompt: System prompt
             user_prompt: User prompt
             max_tokens: Optional override for max_tokens
-            
+
         Returns:
             Generated text response
         """
@@ -46,37 +46,35 @@ class LLMClient:
         if self.provider == "openai" and self._has_openai():
             return self._run_openai(system_prompt, user_prompt, max_tokens)
         return self._stub_completion(system_prompt, user_prompt)
-    
+
     async def generate_async(
-        self, 
-        system_prompt: str, 
-        user_prompt: str, 
+        self,
+        system_prompt: str,
+        user_prompt: str,
         max_tokens: int | None = None,
-        timeout: float | None = None
+        timeout: float | None = None,
     ) -> str:
         """Generate LLM response asynchronously with timeout.
-        
+
         Args:
             system_prompt: System prompt
             user_prompt: User prompt
             max_tokens: Optional override for max_tokens
             timeout: Timeout in seconds (default from settings)
-            
+
         Returns:
             Generated text response
-            
+
         Raises:
             asyncio.TimeoutError: If request exceeds timeout
         """
         timeout = timeout or self.timeout
         max_tokens = max_tokens or self.max_tokens
-        
+
         try:
             return await asyncio.wait_for(
-                asyncio.to_thread(
-                    self.generate, system_prompt, user_prompt, max_tokens
-                ),
-                timeout=timeout
+                asyncio.to_thread(self.generate, system_prompt, user_prompt, max_tokens),
+                timeout=timeout,
             )
         except asyncio.TimeoutError as e:
             raise asyncio.TimeoutError(f"LLM request timed out after {timeout}s") from e

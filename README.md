@@ -16,13 +16,22 @@ Natural-language control plane for Linux that routes user intents to trusted aut
   - **SystemAgent**: Real-time CPU/memory/disk metrics, process listing, systemd service status, system health monitoring
   - **DeveloperAgent**: Git operations (status, log, branches), repository management, project workflows
   - **NetworkAgent**: Interface enumeration, ping/connectivity tests, DNS lookups, active connection monitoring
-- **LLM-Powered Intent Classification** (NEW!):
-  - **Intelligent Intent Recognition**: Uses Claude/GPT-4 to classify user intents with high accuracy
+- **Google Gemini 1.5 Pro Integration** (NEW! 🧠💎):
+  - **Multimodal Native**: Process text, images, audio, and video in a single API call
+  - **2M Token Context Window**: Hold entire user history, conversations, and state in memory
+  - **40x Cost Reduction**: $0.075/1M tokens vs Claude's $3/1M for input tokens
+  - **Streaming Responses**: Real-time interaction perfect for voice commands
+  - **Context Management**: Persistent user profiles, pantry items, music history, routines
+  - **Receipt Scanning**: Extract structured data from receipt photos automatically
+  - **Voice Commands**: Send audio directly for natural language processing
+  - **Multi-Provider Fallback**: Automatic fallback to Claude/OpenAI if Gemini unavailable
+- **LLM-Powered Intent Classification**:
+  - **Intelligent Intent Recognition**: Uses Gemini/Claude/GPT-4 to classify user intents with high accuracy
   - **Entity Extraction**: Automatically extracts file paths, sizes, service names, and parameters
   - **Context-Aware**: Considers git status, active window, and other signals for better classification
   - **Graceful Fallback**: Falls back to rule-based matching when LLM unavailable or times out
   - **Security-First**: Path validation against whitelists, size parsing, and entity sanitization
-  - **Configurable**: Support for Anthropic Claude and OpenAI GPT with timeout controls
+  - **Configurable**: Support for Google Gemini, Anthropic Claude, and OpenAI GPT with timeout controls
 - **Self-Learning Personality System**:
   - **UserPersonalityModel**: Learns your communication style (verbosity, technical level, formality) in real-time
   - **PromptOptimizationFilter**: Adapts every response to match your preferences
@@ -60,31 +69,54 @@ cp config/settings.example.yaml config/settings.yaml
 
 **📖 For detailed token setup instructions, see [docs/TOKEN_SETUP.md](docs/TOKEN_SETUP.md)**
 
-### 3. Configure LLM Intent Classification (Optional but Recommended)
+### 3. Configure LLM Provider (Optional but Recommended)
 
-MaxOS uses LLM-powered intent classification for better accuracy when API keys are configured. Edit `config/settings.yaml`:
+MaxOS supports multiple LLM providers with automatic fallback. Edit `config/settings.yaml`:
 
+**Option 1: Google Gemini (Recommended - Multimodal + 2M Token Context)**
 ```yaml
-orchestrator:
-  provider: "anthropic"           # or "openai" for OpenAI GPT-4
-  model: "claude-3-5-sonnet"      # or "gpt-4" for OpenAI
-
 llm:
-  anthropic_api_key: "your-api-key-here"  # Or use ANTHROPIC_API_KEY env var
-  openai_api_key: "optional"              # Or use OPENAI_API_KEY env var
+  provider: gemini
+  google_api_key: "your-google-api-key"
+  model: gemini-1.5-pro              # or gemini-1.5-flash for faster responses
   
-  # Intent classification settings
-  fallback_to_rules: true                # Fall back to keyword matching if LLM fails
-  max_tokens: 500                        # Max tokens for classification response
-  temperature: 0.1                       # Low temperature for consistent classification
-  timeout_seconds: 10                    # Request timeout
+  # Context settings
+  context_window: 2000000            # 2M tokens
+  persist_context: true
+  
+  # Fallback settings
+  fallback_to_claude: true           # Fallback to Claude if Gemini unavailable
+  fallback_to_rules: true            # Fall back to keyword matching if all LLMs fail
 ```
 
-**Benefits of LLM Intent Classification:**
-- 🎯 **Higher Accuracy**: >90% intent classification accuracy vs ~65% with keyword matching
-- 🔍 **Entity Extraction**: Automatically extracts file paths, sizes, service names from natural language
-- 🧠 **Context-Aware**: Considers current git status, active window, and other context signals
-- 🛡️ **Graceful Degradation**: Falls back to rule-based matching when offline or on timeout
+**Option 2: Anthropic Claude**
+```yaml
+llm:
+  provider: anthropic
+  anthropic_api_key: "your-api-key-here"
+  
+orchestrator:
+  provider: "anthropic"
+  model: "claude-3-5-sonnet"
+```
+
+**Option 3: OpenAI GPT-4**
+```yaml
+llm:
+  provider: openai
+  openai_api_key: "your-api-key-here"
+  
+orchestrator:
+  provider: "openai"
+  model: "gpt-4"
+```
+
+**Benefits of Gemini:**
+- 🎯 **Multimodal**: Handle images, audio, video natively
+- 💰 **40x Cheaper**: $0.075/1M vs Claude's $3/1M input tokens
+- 🧠 **2M Token Context**: Hold entire user history in memory
+- 🎤 **Voice Support**: Process audio directly without transcription
+- 📸 **Receipt Scanning**: Extract structured data from photos
 
 **Without API Keys:** MaxOS automatically falls back to fast rule-based keyword matching.
 
@@ -128,6 +160,36 @@ python -m max_os.interfaces.cli.main --export-personality ~/my_personality.json
 ```bash
 uvicorn max_os.interfaces.api.main:app --reload
 ```
+
+## Gemini Multimodal Examples
+
+MaxOS includes example scripts demonstrating Gemini's multimodal capabilities:
+
+### Receipt Scanning
+```bash
+# Extract structured data from a receipt photo
+python examples/gemini_receipt_scan.py
+```
+
+This example shows how to:
+- Load a receipt image
+- Use Gemini to extract items, quantities, and prices
+- Return structured JSON data
+- Add items to virtual pantry
+
+### Voice Commands
+```bash
+# Process voice commands directly (no transcription needed!)
+python examples/gemini_voice_command.py
+```
+
+This example demonstrates:
+- Loading audio files (WAV, MP3, etc.)
+- Sending audio directly to Gemini
+- Processing voice commands with context
+- Natural language responses
+
+**Note:** Set `GOOGLE_API_KEY` environment variable to run these examples. See example files for detailed usage.
 
 **Systemd service**
 - A service template lives in `scripts/maxos.service`. Update `WorkingDirectory`/`ExecStart` to your install + virtualenv path (defaults assume `/opt/maxos/.venv`), set the service `User`/`Group` (defaults to `maxos`), and optionally set `AI_OS_CONFIG` in `/etc/maxos.env` before enabling.

@@ -95,25 +95,97 @@ def get_system_prompt() -> str:
 
 def build_user_prompt(user_input: str, context: dict | None = None) -> str:
     """Build the user prompt with optional context.
-    
+
     Args:
         user_input: The raw user input text
         context: Optional context dictionary (e.g., git_status, active_window)
-    
+
     Returns:
         Formatted user prompt string
     """
     if not context:
         return f"User request: {user_input}\n\nClassify this intent and extract entities."
-    
+
     # Include relevant context if available
     context_str = ""
     if context.get("git_status"):
         context_str += f"Git status: {context['git_status']}\n"
     if context.get("active_window"):
         context_str += f"Active window: {context['active_window']}\n"
-    
+
     if context_str:
         return f"{context_str}\nUser request: {user_input}\n\nClassify this intent and extract entities based on the context."
-    
+
     return f"User request: {user_input}\n\nClassify this intent and extract entities."
+
+
+# Gemini-optimized system prompt for MaxOS assistant
+GEMINI_SYSTEM_PROMPT = """You are Max, an AI operating system assistant. You have native multimodal capabilities and access to complete user history.
+
+CAPABILITIES:
+- Understand voice, images, and video natively
+- Access user's complete history (pantry, music, routines)
+- Learn patterns and predict needs proactively
+- Control music, recipes, shopping, home automation
+
+PERSONALITY:
+- Friendly and concise
+- Proactive but not intrusive
+- Use "Hey!" as greeting when appropriate
+
+Always respond naturally and helpfully."""
+
+
+def build_gemini_system_prompt(user_id: str, context: dict | None = None) -> str:
+    """Build Gemini-optimized system prompt with user context.
+
+    Args:
+        user_id: User identifier
+        context: Optional context dictionary with user data
+
+    Returns:
+        Formatted system prompt for Gemini
+    """
+    from datetime import datetime
+
+    base_prompt = f"""You are Max, an AI operating system assistant for {user_id}.
+
+CAPABILITIES:
+- Understand voice, images, and video natively
+- Access user's complete history (pantry, music, routines)
+- Learn patterns and predict needs proactively
+- Control music, recipes, shopping, home automation
+"""
+
+    if context:
+        base_prompt += "\nCURRENT STATE:\n"
+
+        if context.get("pantry_items"):
+            pantry = context["pantry_items"][:10]  # Limit to avoid token overflow
+            base_prompt += f"- Pantry: {', '.join(pantry)}\n"
+
+        if context.get("music_history"):
+            music = context["music_history"][:5]
+            base_prompt += f"- Recent music: {', '.join(music)}\n"
+
+        if context.get("current_time"):
+            base_prompt += f"- Time: {context['current_time']}\n"
+        else:
+            base_prompt += f"- Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+
+        if context.get("location"):
+            base_prompt += f"- Location: {context['location']}\n"
+
+        if context.get("user_profile"):
+            base_prompt += f"- User Profile: {context['user_profile']}\n"
+
+    base_prompt += """
+PERSONALITY:
+- Friendly and concise
+- Proactive but not intrusive
+- Use "Hey!" as greeting when appropriate
+
+Always respond naturally and helpfully.
+"""
+
+    return base_prompt
