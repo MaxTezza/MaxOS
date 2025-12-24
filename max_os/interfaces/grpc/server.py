@@ -30,7 +30,10 @@ class MaxOSServiceServicer(maxos_pb2_grpc.MaxOSServiceServicer):
             # Convert context map to dict
             ctx = dict(request.context) if request.context else {}
 
-            # Run async handler - use asyncio.run() for cleaner event loop handling
+            # Run async handler - asyncio.run() is used here because:
+            # 1. gRPC uses synchronous servicer methods
+            # 2. Each request runs in its own thread (ThreadPoolExecutor)
+            # 3. asyncio.run() is the standard Python 3.7+ pattern for this use case
             response = asyncio.run(self.orchestrator.handle_text(request.text, ctx))
 
             # Convert payload dict to map<string, string> for proto
@@ -80,7 +83,10 @@ class MaxOSServiceServicer(maxos_pb2_grpc.MaxOSServiceServicer):
                 progress=30, status="processing", message="Analyzing intent..."
             )
 
-            # Run async handler - use asyncio.run() for cleaner event loop handling
+            # Run async handler - asyncio.run() is used here because:
+            # 1. gRPC uses synchronous servicer methods
+            # 2. Each request runs in its own thread (ThreadPoolExecutor)
+            # 3. asyncio.run() is the standard Python 3.7+ pattern for this use case
             response = asyncio.run(self.orchestrator.handle_text(request.text, ctx))
 
             yield maxos_pb2.OperationUpdate(
