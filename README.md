@@ -16,13 +16,20 @@ Natural-language control plane for Linux that routes user intents to trusted aut
   - **SystemAgent**: Real-time CPU/memory/disk metrics, process listing, systemd service status, system health monitoring
   - **DeveloperAgent**: Git operations (status, log, branches), repository management, project workflows
   - **NetworkAgent**: Interface enumeration, ping/connectivity tests, DNS lookups, active connection monitoring
-- **Self-Learning Personality System** (NEW!):
+- **LLM-Powered Intent Classification** (NEW! Phase 1):
+  - **Intelligent Intent Recognition**: Uses Claude/GPT-4 to understand natural language commands
+  - **Entity Extraction**: Automatically extracts file paths, sizes, service names from user text
+  - **High-Quality Confidence Scores**: Better intent disambiguation with 0.0-1.0 calibrated scores
+  - **Automatic Fallback**: Falls back to keyword rules when LLM unavailable (offline mode)
+  - **Context-Aware**: Leverages git status, active windows, and previous actions for better classification
+  - **Configurable**: Support for Anthropic Claude and OpenAI GPT-4 with timeout/retry controls
+- **Self-Learning Personality System**:
   - **UserPersonalityModel**: Learns your communication style (verbosity, technical level, formality) in real-time
   - **PromptOptimizationFilter**: Adapts every response to match your preferences
   - **Pattern Detection**: Identifies temporal patterns (what you do when) and sequential patterns (action A → action B)
   - **Privacy-First**: All learning stored locally in SQLite (`~/.maxos/personality.db`), no cloud telemetry
   - **Personality Inspection**: View learned preferences with `--show-personality` or export with `--export-personality`
-- **Hybrid intent planner** backed by Pydantic schemas plus a graceful path for future LLM-powered planning.
+- **Hybrid intent planner** backed by Pydantic schemas with LLM-powered classification and graceful fallback to keyword rules.
 - **Redis-backed conversation memory** for persistent, multi-session context.
 - **CLI prototype** that parses intents and forwards them to the best-matching agent with structured responses, including a short-lived conversation memory buffer, JSON output mode, and transcript export.
 - **Configuration loader** for environment + YAML settings, including placeholders for API keys and policy controls, and an LLM adapter that falls back to local stubs when keys are missing.
@@ -53,7 +60,41 @@ cp config/settings.example.yaml config/settings.yaml
 
 **📖 For detailed token setup instructions, see [docs/TOKEN_SETUP.md](docs/TOKEN_SETUP.md)**
 
-### 3. Run MaxOS
+### 3. Configure LLM Intent Classification (Optional but Recommended)
+
+MaxOS can use LLM APIs for intelligent intent classification. Configure in `config/settings.yaml`:
+
+```yaml
+orchestrator:
+  provider: "anthropic"  # or "openai"
+  model: "claude-3-5-sonnet-20241022"
+  temperature: 0.1
+  max_tokens: 500
+  fallback_to_rules: true  # Fall back to keyword matching if LLM unavailable
+
+llm:
+  anthropic_api_key: "${ANTHROPIC_API_KEY}"  # Set in .env
+  openai_api_key: "${OPENAI_API_KEY}"        # Optional
+  timeout_seconds: 10
+  retry_attempts: 3
+```
+
+**LLM Intent Classification Benefits:**
+- **Natural Language Understanding**: Understands complex, conversational commands
+- **Entity Extraction**: Automatically extracts paths, sizes, service names from text
+- **Context-Aware**: Uses git status, active windows, previous commands for better accuracy
+- **Better Confidence Scores**: More reliable 0.0-1.0 confidence calibration
+- **Automatic Fallback**: Works offline with keyword rules when no API key configured
+
+**Examples of Improved Understanding:**
+```bash
+# Complex queries the LLM understands better than keyword matching:
+python -m max_os.interfaces.cli.main "copy all PDFs from Documents to my backup folder"
+python -m max_os.interfaces.cli.main "find files larger than 200MB in Downloads"
+python -m max_os.interfaces.cli.main "move old log files to archive directory"
+```
+
+### 4. Run MaxOS
 ```bash
 python -m max_os.interfaces.cli.main "show system health"
 ```

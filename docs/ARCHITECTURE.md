@@ -18,9 +18,67 @@ MaxOS reframes the operating system as an intent-driven platform. Users speak or
 | UX Agent             | Voice/GUI layer, conversation memory sync                      | Whisper/Coqui STT, Piper TTS, React shell | Calls orchestrator callbacks   |
 
 ## 3. Intent & Memory Layer
-- **Intent Planner:** `max_os/core/planner.py` uses keyword rules today, emits structured `Intent` objects, and will call the LLM adapter once API keys are configured.
-- **LLM Adapter:** `max_os/core/llm.py` hides provider differences (Anthropic/OpenAI/local) and falls back to a stub so development can continue without credentials. System prompts describe the MaxOS agent inventory; user prompts come from the CLI/UX shell.
+- **Intent Planner:** `max_os/core/planner.py` uses keyword rules as fallback and emits structured `Intent` objects.
+- **LLM-Powered Intent Classifier:** `max_os/core/intent_classifier.py` uses Claude/GPT-4 for intelligent natural language understanding with automatic fallback to keyword rules when LLM unavailable. Features:
+  - **System Prompt Engineering:** `max_os/core/prompts.py` provides carefully crafted prompts with few-shot examples describing all MaxOS agent capabilities
+  - **Entity Extraction:** `max_os/core/entities.py` parses LLM JSON responses to extract structured entities (file paths, sizes, service names)
+  - **Confidence Calibration:** LLM returns 0.0-1.0 confidence scores for better intent disambiguation
+  - **Context-Aware:** Leverages git status, active windows, and previous actions for improved accuracy
+  - **Security Validation:** Validates extracted paths against whitelist, sanitizes user input before LLM submission
+- **LLM Adapter:** `max_os/utils/llm_api.py` hides provider differences (Anthropic/OpenAI) with timeout handling, retry logic, and graceful fallback. Falls back to keyword rules when API keys not configured.
 - **Conversation Memory:** `max_os/core/memory.py` holds the last N turns, suitable for short-context planning; persistence hooks write transcripts to disk or Redis in later phases.
+
+### 3.1 LLM Intent Classification Pipeline
+
+```
+User Input → Intent Classifier
+    ↓
+1. Build LLM Prompt (system message + few-shot examples + context)
+2. Call LLM API (Anthropic Claude or OpenAI GPT-4)
+    ↓ Success              ↓ Failure/Timeout
+3. Parse JSON Response    → Fallback to Keyword Rules
+4. Extract Entities
+5. Validate Paths
+    ↓
+Intent Object with Confidence + Entities
+```
+
+**Example Flow:**
+```
+Input: "copy Documents/report.pdf to Backup folder"
+
+LLM Response:
+{
+  "intent": "file.copy",
+  "confidence": 0.95,
+  "entities": {
+    "source_path": "Documents/report.pdf",
+    "dest_path": "Backup"
+  },
+  "summary": "Copy report.pdf to Backup folder"
+}
+
+Result: Intent(
+  name="file.copy",
+  confidence=0.95,
+  slots=[
+    Slot(name="source_path", value="Documents/report.pdf"),
+    Slot(name="dest_path", value="Backup")
+  ]
+)
+```
+
+### 3.2 Fallback Mechanisms
+
+MaxOS implements multiple fallback layers for reliability:
+
+1. **LLM Available:** Primary classification via Claude/GPT-4
+2. **LLM Timeout:** Retry with exponential backoff (3 attempts, 10s timeout)
+3. **LLM Unavailable:** Automatic fallback to keyword rules (offline mode)
+4. **Context-Aware Rules:** Git status + active window heuristics
+5. **Default Intent:** Low-confidence general intent as last resort
+
+This ensures MaxOS works reliably even without internet connectivity or API keys.
 
 ## 4. Linux Integration Layer
 - **D-Bus Calls:** e.g., `org.freedesktop.systemd1.Manager.StartUnit` with transient units for agent jobs.
@@ -59,7 +117,11 @@ Threats and mitigations:
 
 ## 8. Implementation Status
 - ✅ Repository scaffolding (this repo)
-- 🚧 Intent parser + local LLM adapter
+- ✅ LLM-powered intent classification with entity extraction (Phase 1)
+- ✅ Anthropic Claude & OpenAI GPT-4 integration
+- ✅ Automatic fallback to keyword rules (offline mode)
+- ✅ Context-aware intent resolution (git status, active windows)
+- ✅ Entity validation and path security checks
 - 🚧 Concrete D-Bus bindings
 - 🔜 Voice + GUI shells
 
