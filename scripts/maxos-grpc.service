@@ -4,10 +4,14 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/mtez/ai-os/.venv/bin/python -m max_os.interfaces.grpc.server
+# Note: Update ExecStart path to match your installation
+# Example: ExecStart=/path/to/your/venv/bin/python -m max_os.interfaces.grpc.server
+ExecStart=/usr/local/bin/python3 -m max_os.interfaces.grpc.server
 Restart=on-failure
-User=mtez
-Group=mtez
+# Note: Update User and Group to match your deployment
+User=maxos
+Group=maxos
+WorkingDirectory=/opt/maxos
 
 [Install]
 WantedBy=multi-user.target

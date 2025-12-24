@@ -30,13 +30,8 @@ class MaxOSServiceServicer(maxos_pb2_grpc.MaxOSServiceServicer):
             # Convert context map to dict
             ctx = dict(request.context) if request.context else {}
 
-            # Run async handler in sync context
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                response = loop.run_until_complete(self.orchestrator.handle_text(request.text, ctx))
-            finally:
-                loop.close()
+            # Run async handler - use asyncio.run() for cleaner event loop handling
+            response = asyncio.run(self.orchestrator.handle_text(request.text, ctx))
 
             # Convert payload dict to map<string, string> for proto
             payload_map = {}
@@ -85,13 +80,8 @@ class MaxOSServiceServicer(maxos_pb2_grpc.MaxOSServiceServicer):
                 progress=30, status="processing", message="Analyzing intent..."
             )
 
-            # Run async handler in sync context
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                response = loop.run_until_complete(self.orchestrator.handle_text(request.text, ctx))
-            finally:
-                loop.close()
+            # Run async handler - use asyncio.run() for cleaner event loop handling
+            response = asyncio.run(self.orchestrator.handle_text(request.text, ctx))
 
             yield maxos_pb2.OperationUpdate(
                 progress=70, status="processing", message="Executing agent..."
