@@ -1,4 +1,5 @@
 """Transaction logging system for filesystem operations."""
+
 from __future__ import annotations
 
 import json
@@ -31,7 +32,8 @@ class TransactionLogger:
     def _init_database(self) -> None:
         """Initialize database schema."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -41,7 +43,8 @@ class TransactionLogger:
                     metadata TEXT,
                     rollback_info TEXT
                 )
-            """)
+            """
+            )
             conn.commit()
 
     def log_transaction(
@@ -209,7 +212,7 @@ class TransactionLogger:
             List of transaction dicts
         """
         from datetime import timedelta
-        
+
         cutoff = datetime.now() - timedelta(days=days)
         cutoff_str = cutoff.isoformat()
 

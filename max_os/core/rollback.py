@@ -1,4 +1,5 @@
 """Rollback system for filesystem operations."""
+
 from __future__ import annotations
 
 import hashlib
@@ -197,7 +198,10 @@ class RollbackManager:
                     restore_path = original_path
                     counter = 1
                     while restore_path.exists():
-                        restore_path = original_path.parent / f"{original_path.stem}_restored_{counter}{original_path.suffix}"
+                        restore_path = (
+                            original_path.parent
+                            / f"{original_path.stem}_restored_{counter}{original_path.suffix}"
+                        )
                         counter += 1
 
                     shutil.move(str(trash_file), str(restore_path))
@@ -298,13 +302,15 @@ class RollbackManager:
                 metadata_path = trash_file.parent / f".{trash_file.name}.metadata.json"
                 if metadata_path.exists():
                     metadata = json.loads(metadata_path.read_text())
-                    trash_files.append({
-                        "transaction_id": int(tx_dir.name),
-                        "trash_path": str(trash_file),
-                        "original_path": metadata["original_path"],
-                        "timestamp": metadata["timestamp"],
-                        "size_bytes": metadata["size_bytes"],
-                    })
+                    trash_files.append(
+                        {
+                            "transaction_id": int(tx_dir.name),
+                            "trash_path": str(trash_file),
+                            "original_path": metadata["original_path"],
+                            "timestamp": metadata["timestamp"],
+                            "size_bytes": metadata["size_bytes"],
+                        }
+                    )
 
         return sorted(trash_files, key=lambda x: x["timestamp"], reverse=True)
 

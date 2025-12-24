@@ -1,7 +1,7 @@
 """Confirmation handler for filesystem operations."""
+
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -46,7 +46,7 @@ class OperationPreview:
 
         if self.file_count > 0:
             lines.append("Files affected:")
-            for i, file_info in enumerate(self.files[:10]):  # Show max 10 files
+            for file_info in self.files[:10]:  # Show max 10 files
                 size_str = self.format_size(file_info.get("size_bytes", 0))
                 lines.append(f"  - {file_info.get('name', 'unknown')} ({size_str})")
 
@@ -70,7 +70,9 @@ class ConfirmationHandler:
         """
         self.config = config or {}
         self.enabled = self.config.get("enabled", True)
-        self.require_for = set(self.config.get("require_for_operations", ["copy", "move", "delete"]))
+        self.require_for = set(
+            self.config.get("require_for_operations", ["copy", "move", "delete"])
+        )
         self.auto_approve_threshold_bytes = (
             self.config.get("auto_approve_under_mb", 10) * 1024 * 1024
         )
