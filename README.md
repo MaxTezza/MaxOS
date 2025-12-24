@@ -88,7 +88,7 @@ uvicorn max_os.interfaces.api.main:app --reload
 ```
 
 **Systemd service**
-- A service template lives in `scripts/maxos.service`. Update `WorkingDirectory` to your install path (e.g., `/opt/maxos`) and optionally set `AI_OS_CONFIG` in `/etc/maxos.env` before enabling.
+- A service template lives in `scripts/maxos.service`. Update `WorkingDirectory`/`ExecStart` to your install + virtualenv path (defaults assume `/opt/maxos/.venv`), set the service `User`/`Group` (defaults to `maxos`), and optionally set `AI_OS_CONFIG` in `/etc/maxos.env` before enabling.
 
 **CLI Flags**
 - `--json` prints only the payload (great for piping into `jq`).
