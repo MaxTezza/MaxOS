@@ -25,8 +25,8 @@ def parse_llm_response(response_text: str) -> dict[str, Any]:
     # Try to extract JSON from response if it contains other text
     response_text = response_text.strip()
     
-    # Look for JSON object in the response
-    json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+    # Look for JSON object in the response (non-greedy match)
+    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
     if json_match:
         response_text = json_match.group()
     
@@ -120,10 +120,10 @@ def parse_size_to_bytes(size_str: str) -> int:
     """
     size_str = size_str.strip().upper()
     
-    # Extract number and unit
+    # Extract number and unit - require numeric value
     match = re.match(r'^([\d.]+)\s*([KMGT]?B?)$', size_str)
     if not match:
-        raise ValueError(f"Invalid size format: {size_str}")
+        raise ValueError(f"Invalid size format: {size_str}. Expected format: '200MB', '1.5GB', etc.")
     
     value = float(match.group(1))
     unit = match.group(2)

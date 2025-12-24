@@ -65,13 +65,15 @@ cp config/settings.example.yaml config/settings.yaml
 MaxOS uses LLM-powered intent classification for better accuracy when API keys are configured. Edit `config/settings.yaml`:
 
 ```yaml
+orchestrator:
+  provider: "anthropic"           # or "openai" for OpenAI GPT-4
+  model: "claude-3-5-sonnet"      # or "gpt-4" for OpenAI
+
 llm:
   anthropic_api_key: "your-api-key-here"  # Or use ANTHROPIC_API_KEY env var
   openai_api_key: "optional"              # Or use OPENAI_API_KEY env var
   
-  # LLM-powered intent classification settings
-  provider: anthropic                     # or openai
-  model: claude-3-5-sonnet-20241022      # or gpt-4
+  # Intent classification settings
   fallback_to_rules: true                # Fall back to keyword matching if LLM fails
   max_tokens: 500                        # Max tokens for classification response
   temperature: 0.1                       # Low temperature for consistent classification

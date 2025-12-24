@@ -21,7 +21,12 @@ def mock_planner():
 def mock_settings():
     settings = MagicMock(spec=Settings)
     settings.orchestrator = {"provider": "stub", "model": "test"}
-    settings.llm = {"fallback_to_rules": True, "max_tokens": 500, "temperature": 0.1, "timeout_seconds": 10}
+    settings.llm = {
+        "fallback_to_rules": True, 
+        "max_tokens": 500, 
+        "temperature": 0.1, 
+        "timeout_seconds": 10
+    }
     settings.agents = {}
     return settings
 

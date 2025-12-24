@@ -6,7 +6,7 @@ from typing import Any
 import structlog
 
 from max_os.core.entities import create_intent_from_llm_response, extract_and_validate_entities
-from max_os.core.intent import Intent
+from max_os.core.intent import Intent, Slot
 from max_os.core.llm import LLMClient
 from max_os.core.planner import IntentPlanner  # Re-using existing planner for initial heuristics
 from max_os.core.prompts import build_user_prompt, get_system_prompt
@@ -110,7 +110,6 @@ class IntentClassifier:
             validated_entities = extract_and_validate_entities(entities, whitelist)
             
             # Update slots with validated entities
-            from max_os.core.intent import Slot
             intent.slots = [Slot(name=k, value=str(v)) for k, v in validated_entities.items()]
         
         return intent
