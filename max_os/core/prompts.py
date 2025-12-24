@@ -221,7 +221,7 @@ def build_llm_prompt(user_input: str, context: dict | None = None) -> str:
     # Build few-shot examples
     examples = get_few_shot_examples()
     examples_str = "\n\nExamples:\n"
-    for i, example in enumerate(examples[:5], 1):  # Use first 5 examples to keep prompt reasonable
+    for example in examples[:5]:  # Use first 5 examples to keep prompt reasonable
         examples_str += f"\nUser: {example['user']}\nAssistant: {example['assistant']}\n"
     
     # Build final prompt
