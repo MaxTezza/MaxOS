@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Any
 
 from max_os.utils.config import Settings
 
@@ -79,8 +78,8 @@ class LLMClient:
                 ),
                 timeout=timeout
             )
-        except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(f"LLM request timed out after {timeout}s")
+        except asyncio.TimeoutError as e:
+            raise asyncio.TimeoutError(f"LLM request timed out after {timeout}s") from e
 
     def _has_anthropic(self) -> bool:
         return bool(

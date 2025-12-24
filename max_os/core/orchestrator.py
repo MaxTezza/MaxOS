@@ -44,7 +44,7 @@ class AIOperatingSystem:
         configure_logging(self.settings)
         self.logger = structlog.get_logger("max_os.orchestrator")
         self.planner = IntentPlanner()
-        self.intent_classifier = IntentClassifier(self.planner)  # Initialize IntentClassifier
+        self.intent_classifier = IntentClassifier(self.planner, self.settings)  # Pass settings
         self.agents: list[BaseAgent] = agents or self._init_agents()
         self.memory = ConversationMemory(limit=50, settings=self.settings)
         self.last_context: dict[str, object] | None = None
