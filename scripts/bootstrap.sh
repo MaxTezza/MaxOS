@@ -166,14 +166,14 @@ if [[ "$install_service" == "y" ]]; then
     mkdir -p ~/.config/systemd/user/
     cat > ~/.config/systemd/user/maxos.service <<EOF
 [Unit]
-Description=MaxOS AI Operating System Interface
+Description=MaxOS API Service
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=$PROJECT_ROOT/.venv/bin/python -m max_os.interfaces.cli.main --daemon
-Restart=on-failure
 WorkingDirectory=$PROJECT_ROOT
+ExecStart=$PROJECT_ROOT/.venv/bin/uvicorn max_os.interfaces.api.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
 
 [Install]
 WantedBy=default.target

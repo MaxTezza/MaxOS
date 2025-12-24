@@ -4,10 +4,10 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/mtez/ai-os/.venv/bin/uvicorn max_os.interfaces.api.main:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/opt/maxos
+EnvironmentFile=-/etc/maxos.env
+ExecStart=/usr/bin/env uvicorn max_os.interfaces.api.main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
-User=mtez
-Group=mtez
 
 [Install]
 WantedBy=multi-user.target

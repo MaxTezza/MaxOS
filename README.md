@@ -87,6 +87,9 @@ python -m max_os.interfaces.cli.main --export-personality ~/my_personality.json
 uvicorn max_os.interfaces.api.main:app --reload
 ```
 
+**Systemd service**
+- A service template lives in `scripts/maxos.service`. Update `WorkingDirectory` to your install path (e.g., `/opt/maxos`) and optionally set `AI_OS_CONFIG` in `/etc/maxos.env` before enabling.
+
 **CLI Flags**
 - `--json` prints only the payload (great for piping into `jq`).
 - `--show-memory` echoes the in-memory transcript for the current session.
