@@ -1,4 +1,5 @@
 """Context awareness engine that gathers real-time signals about the host."""
+
 from __future__ import annotations
 
 import asyncio
@@ -56,15 +57,17 @@ class FileChangeEventHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
         with self.lock:
-            self.events.append({
-                "event_type": event.event_type,
-                "src_path": event.src_path,
-                "is_directory": event.is_directory,
-                "timestamp": datetime.now(UTC).isoformat(),
-            })
+            self.events.append(
+                {
+                    "event_type": event.event_type,
+                    "src_path": event.src_path,
+                    "is_directory": event.is_directory,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
             if len(self.events) > self.max_events:
                 self.events.pop(0)
-            
+
             # Invalidate repo cache if a change is detected in a .git directory
             if ".git" in event.src_path:
                 self.context_engine.invalidate_repo_cache()
@@ -74,6 +77,7 @@ class FileChangeEventHandler(FileSystemEventHandler):
             events = list(self.events)
             self.events.clear()
             return events
+
 
 class ContextAwarenessEngine:
     """Collects signals about the local environment for predictive agents."""
@@ -85,9 +89,7 @@ class ContextAwarenessEngine:
         tracked_dirs: list[Path] | None = None,
     ) -> None:
         self.logger = structlog.get_logger("max_os.context_engine")
-        self.repo_cache_ttl = timedelta(
-            seconds=int(os.environ.get("MAXOS_REPO_CACHE_TTL", "3600"))
-        )
+        self.repo_cache_ttl = timedelta(seconds=int(os.environ.get("MAXOS_REPO_CACHE_TTL", "3600")))
         self.max_repo_results = int(os.environ.get("MAXOS_REPO_LIMIT", "25"))
         self.max_repo_scan_depth = int(os.environ.get("MAXOS_REPO_SCAN_DEPTH", "2"))
         self.repo_paths = repo_paths or self._discover_repos()
@@ -131,10 +133,9 @@ class ContextAwarenessEngine:
             cache_path.unlink()
             self.logger.info("Git repo cache invalidated.")
 
-
-
     async def gather_all_signals(self, timeout: float | None = None) -> dict[str, Any]:
         """Collect every available signal about the current state."""
+
         async def _collect():
             return await asyncio.gather(
                 self._gather_system_metrics(),
@@ -206,7 +207,9 @@ class ContextAwarenessEngine:
 
     def _collect_processes(self) -> dict[str, Any]:
         processes = []
-        for proc in psutil.process_iter(["pid", "name", "username", "cpu_percent", "memory_percent"]):
+        for proc in psutil.process_iter(
+            ["pid", "name", "username", "cpu_percent", "memory_percent"]
+        ):
             try:
                 info = proc.info
                 processes.append(
@@ -270,13 +273,13 @@ class ContextAwarenessEngine:
             status_index = line[0]
             status_worktree = line[1]
             filepath = line[3:]
-            
+
             if status_index == "?":
                 untracked.append(filepath)
             else:
-                if status_index in {"M", "A", "D", "R", "C"}: # Staged changes
+                if status_index in {"M", "A", "D", "R", "C"}:  # Staged changes
                     staged.append(filepath)
-                if status_worktree in {"M", "D"}: # Modified or deleted in working tree
+                if status_worktree in {"M", "D"}:  # Modified or deleted in working tree
                     modified.append(filepath)
 
         return {
@@ -501,7 +504,13 @@ class ContextAwarenessEngine:
         system = platform.system().lower()
         try:
             if system == "darwin":
-                return self._run_command(["osascript", "-e", 'tell application "System Events" to get name of first application process whose frontmost is true'])
+                return self._run_command(
+                    [
+                        "osascript",
+                        "-e",
+                        'tell application "System Events" to get name of first application process whose frontmost is true',
+                    ]
+                )
             if system == "linux":
                 if shutil.which("xdotool"):
                     return self._run_command(["xdotool", "getactivewindow", "getwindowname"])
@@ -565,7 +574,7 @@ class ContextAwarenessEngine:
             if os.environ.get("XDG_SESSION_TYPE") == "wayland":
                 # Acknowledge Wayland limitation (can be tricky with subprocess)
                 return "Clipboard access not reliably available on Wayland."
-            
+
             if shutil.which("xclip"):
                 commands.append(["xclip", "-selection", "clipboard", "-o"])
             if shutil.which("wl-paste"):

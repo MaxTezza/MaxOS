@@ -30,7 +30,9 @@ def sample_interaction():
 @pytest.mark.asyncio
 async def test_realtime_engine_processes_batches(sample_interaction):
     personality = StubPersonality()
-    engine = RealTimeLearningEngine(personality, observation_interval=0.01, batch_size=2, max_queue=5)
+    engine = RealTimeLearningEngine(
+        personality, observation_interval=0.01, batch_size=2, max_queue=5
+    )
 
     engine.observe_interaction(sample_interaction)
     engine.observe_interaction(sample_interaction)

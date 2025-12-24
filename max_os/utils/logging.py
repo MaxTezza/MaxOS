@@ -1,4 +1,5 @@
 """Logging helper that honors settings and supports JSON output."""
+
 from __future__ import annotations
 
 import logging
@@ -43,14 +44,20 @@ def configure_logging(settings: Settings) -> None:
         processors = shared_processors + [ConsoleRenderer()]
 
     # Configure standard logging
-    logging.basicConfig(level=level, handlers=[]) # Clear existing handlers
-    
+    logging.basicConfig(level=level, handlers=[])  # Clear existing handlers
+
     # Add stream handler
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
-        processor=structlog.dev.ConsoleRenderer() if not json_mode else structlog.processors.JSONRenderer(),
-        foreign_pre_chain=shared_processors,
-    ))
+    stream_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processor=(
+                structlog.dev.ConsoleRenderer()
+                if not json_mode
+                else structlog.processors.JSONRenderer()
+            ),
+            foreign_pre_chain=shared_processors,
+        )
+    )
     logging.getLogger().addHandler(stream_handler)
 
     # Add file handler if log_file is specified
@@ -59,10 +66,12 @@ def configure_logging(settings: Settings) -> None:
             log_path = Path(log_file)
             log_path.parent.mkdir(parents=True, exist_ok=True)
             file_handler = logging.FileHandler(log_path)
-            file_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
-                processor=structlog.processors.JSONRenderer(), # Always JSON for file logs
-                foreign_pre_chain=shared_processors,
-            ))
+            file_handler.setFormatter(
+                structlog.stdlib.ProcessorFormatter(
+                    processor=structlog.processors.JSONRenderer(),  # Always JSON for file logs
+                    foreign_pre_chain=shared_processors,
+                )
+            )
             logging.getLogger().addHandler(file_handler)
         except OSError:
             # Fall back to stdout-only logging when the path is not writable
@@ -77,4 +86,3 @@ def configure_logging(settings: Settings) -> None:
     )
 
     # Set specific logger levels for debugging
-

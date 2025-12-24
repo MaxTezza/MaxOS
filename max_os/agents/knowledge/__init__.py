@@ -1,4 +1,5 @@
 "Knowledge agent for RAG (Retrieval-Augmented Generation) capabilities."
+
 from __future__ import annotations
 
 import os
@@ -27,7 +28,9 @@ class KnowledgeAgent:
     def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
         self.llm_api = LLMAPI()  # Initialize LLM API client
-        self.knowledge_base_path = Path(self.config.get("knowledge_base_path", Path.cwd())) # Set to current working directory (ai-os root)
+        self.knowledge_base_path = Path(
+            self.config.get("knowledge_base_path", Path.cwd())
+        )  # Set to current working directory (ai-os root)
         if not self.knowledge_base_path.is_absolute():
             self.knowledge_base_path = Path.cwd() / self.knowledge_base_path
 
@@ -42,25 +45,25 @@ class KnowledgeAgent:
         elif any(word in text_lower for word in ["find", "search", "answer"]):
             return await self._handle_search_and_answer(request)
         else:
-            return await self._handle_search_and_answer(request) # Default behavior
+            return await self._handle_search_and_answer(request)  # Default behavior
 
     async def _handle_summarize_or_explain(self, request: AgentRequest) -> AgentResponse:
         # Extract file path from the request text
         file_path_str = None
         for keyword in ["summarize", "explain"]:
-            if keyword in request.text.lower(): # Use lower() for keyword matching
+            if keyword in request.text.lower():  # Use lower() for keyword matching
                 # Assuming the file path follows the keyword
-                parts = request.text.split(keyword, 1) # Use original text for splitting
+                parts = request.text.split(keyword, 1)  # Use original text for splitting
                 if len(parts) > 1:
                     file_path_str = parts[1].strip()
                     break
-        
+
         if not file_path_str:
             return AgentResponse(
                 agent=self.name,
                 status="error",
                 message="Could not identify file to summarize/explain.",
-                payload={"request": request.text}
+                payload={"request": request.text},
             )
 
         file_path = Path(file_path_str)
@@ -72,15 +75,15 @@ class KnowledgeAgent:
                 agent=self.name,
                 status="not_found",
                 message=f"File not found: {file_path}",
-                payload={"file_path": str(file_path)}
+                payload={"file_path": str(file_path)},
             )
-        
+
         if not file_path.is_file():
             return AgentResponse(
                 agent=self.name,
                 status="error",
                 message=f"Path is not a file: {file_path}",
-                payload={"file_path": str(file_path)}
+                payload={"file_path": str(file_path)},
             )
 
         try:
@@ -91,14 +94,14 @@ class KnowledgeAgent:
                 agent=self.name,
                 status="success",
                 message=response_text,
-                payload={"file_path": str(file_path), "summary": response_text[:200]}
+                payload={"file_path": str(file_path), "summary": response_text[:200]},
             )
         except Exception as e:
             return AgentResponse(
                 agent=self.name,
                 status="error",
                 message=f"Failed to summarize/explain file: {str(e)}",
-                payload={"file_path": str(file_path), "error": str(e)}
+                payload={"file_path": str(file_path), "error": str(e)},
             )
 
     async def _handle_search_and_answer(self, request: AgentRequest) -> AgentResponse:
@@ -110,7 +113,7 @@ class KnowledgeAgent:
                 agent=self.name,
                 status="not_found",
                 message="Could not find relevant information in the knowledge base.",
-                payload={"query": query}
+                payload={"query": query},
             )
 
         # Augment the prompt with retrieved content
@@ -128,14 +131,14 @@ class KnowledgeAgent:
                 agent=self.name,
                 status="success",
                 message=response_text,
-                payload={"query": query, "retrieved_content": retrieved_content}
+                payload={"query": query, "retrieved_content": retrieved_content},
             )
         except Exception as e:
             return AgentResponse(
                 agent=self.name,
                 status="error",
                 message=f"Failed to generate response: {str(e)}",
-                payload={"query": query, "error": str(e)}
+                payload={"query": query, "error": str(e)},
             )
 
     def _retrieve_relevant_content(self, query: str) -> str:
@@ -157,8 +160,8 @@ class KnowledgeAgent:
                                 start = max(0, i - 2)
                                 end = min(len(lines), i + 3)
                                 relevant_chunks.append("\n".join(lines[start:end]))
-                                break # Only one chunk per file for simplicity
+                                break  # Only one chunk per file for simplicity
                 except Exception:
                     # Ignore unreadable files
                     pass
-        return "\n---\n".join(relevant_chunks[:3]) # Limit to 3 relevant chunks
+        return "\n---\n".join(relevant_chunks[:3])  # Limit to 3 relevant chunks

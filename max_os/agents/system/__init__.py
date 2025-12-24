@@ -1,4 +1,5 @@
 """System agent for health checks and service control."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -63,7 +64,7 @@ class SystemAgent:
             mem = psutil.virtual_memory()
 
             # Disk metrics
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
 
             # Uptime
             boot_time = datetime.fromtimestamp(psutil.boot_time())
@@ -116,21 +117,25 @@ class SystemAgent:
         """List running processes."""
         try:
             processes = []
-            for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'cpu_percent']):
+            for proc in psutil.process_iter(
+                ["pid", "name", "username", "memory_percent", "cpu_percent"]
+            ):
                 try:
                     pinfo = proc.info
-                    processes.append({
-                        "pid": pinfo['pid'],
-                        "name": pinfo['name'],
-                        "user": pinfo['username'],
-                        "memory_percent": round(pinfo['memory_percent'], 2),
-                        "cpu_percent": round(pinfo['cpu_percent'], 2),
-                    })
+                    processes.append(
+                        {
+                            "pid": pinfo["pid"],
+                            "name": pinfo["name"],
+                            "user": pinfo["username"],
+                            "memory_percent": round(pinfo["memory_percent"], 2),
+                            "cpu_percent": round(pinfo["cpu_percent"], 2),
+                        }
+                    )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
             # Sort by memory usage and take top 20
-            processes.sort(key=lambda x: x['memory_percent'], reverse=True)
+            processes.sort(key=lambda x: x["memory_percent"], reverse=True)
             top_processes = processes[:20]
 
             return AgentResponse(
@@ -173,16 +178,26 @@ class SystemAgent:
 
         try:
             bus = await self._get_bus()
-            introspection = await bus.introspect('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
-            proxy = bus.get_proxy_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1', introspection)
-            manager = proxy.get_interface('org.freedesktop.systemd1.Manager')
+            introspection = await bus.introspect(
+                "org.freedesktop.systemd1", "/org/freedesktop/systemd1"
+            )
+            proxy = bus.get_proxy_object(
+                "org.freedesktop.systemd1", "/org/freedesktop/systemd1", introspection
+            )
+            manager = proxy.get_interface("org.freedesktop.systemd1.Manager")
             unit_path = await manager.call_get_unit(service_name)
-            unit_introspection = await bus.introspect('org.freedesktop.systemd1', unit_path)
-            unit_proxy = bus.get_proxy_object('org.freedesktop.systemd1', unit_path, unit_introspection)
-            unit_properties = unit_proxy.get_interface('org.freedesktop.DBus.Properties')
+            unit_introspection = await bus.introspect("org.freedesktop.systemd1", unit_path)
+            unit_proxy = bus.get_proxy_object(
+                "org.freedesktop.systemd1", unit_path, unit_introspection
+            )
+            unit_properties = unit_proxy.get_interface("org.freedesktop.DBus.Properties")
 
-            active_state = await unit_properties.call_get('org.freedesktop.systemd1.Unit', 'ActiveState')
-            load_state = await unit_properties.call_get('org.freedesktop.systemd1.Unit', 'LoadState')
+            active_state = await unit_properties.call_get(
+                "org.freedesktop.systemd1.Unit", "ActiveState"
+            )
+            load_state = await unit_properties.call_get(
+                "org.freedesktop.systemd1.Unit", "LoadState"
+            )
 
             return AgentResponse(
                 agent=self.name,
@@ -209,15 +224,17 @@ class SystemAgent:
             for partition in psutil.disk_partitions():
                 try:
                     usage = psutil.disk_usage(partition.mountpoint)
-                    partitions.append({
-                        "device": partition.device,
-                        "mountpoint": partition.mountpoint,
-                        "fstype": partition.fstype,
-                        "total_gb": round(usage.total / (1024**3), 2),
-                        "used_gb": round(usage.used / (1024**3), 2),
-                        "free_gb": round(usage.free / (1024**3), 2),
-                        "percent": usage.percent,
-                    })
+                    partitions.append(
+                        {
+                            "device": partition.device,
+                            "mountpoint": partition.mountpoint,
+                            "fstype": partition.fstype,
+                            "total_gb": round(usage.total / (1024**3), 2),
+                            "used_gb": round(usage.used / (1024**3), 2),
+                            "free_gb": round(usage.free / (1024**3), 2),
+                            "percent": usage.percent,
+                        }
+                    )
                 except PermissionError:
                     # Skip partitions we can't access
                     pass

@@ -1,4 +1,5 @@
 """Simple in-memory transcript store with disk persistence hook."""
+
 from __future__ import annotations
 
 import json

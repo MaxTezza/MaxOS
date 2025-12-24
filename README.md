@@ -1,5 +1,7 @@
 # MaxOS
 
+[![CI](https://github.com/MaxTezza/MaxOS/actions/workflows/ci.yml/badge.svg)](https://github.com/MaxTezza/MaxOS/actions/workflows/ci.yml)
+
 Natural-language control plane for Linux that routes user intents to trusted autonomous agents. This repo contains the scaffolding, documentation, and first reference implementations for the MaxOS experiment described in the internal white papers.
 
 ## Why This Exists

@@ -13,7 +13,9 @@ class IntentClassifier:
     """
 
     def __init__(self, planner: IntentPlanner | None = None):
-        self.planner = planner or IntentPlanner() # Use existing planner for rule-based classification
+        self.planner = (
+            planner or IntentPlanner()
+        )  # Use existing planner for rule-based classification
 
     async def classify(self, prompt: str, context: dict[str, Any]) -> Intent:
         """
@@ -30,11 +32,14 @@ class IntentClassifier:
         lowered_prompt = prompt.lower()
 
         # Example: Context-aware classification
-        if context.get('git_status') == 'modified' and any(word in lowered_prompt for word in ['commit', 'push']):
-            return Intent(name="dev.commit", confidence=0.9, summary="User wants to commit/push changes")
-        
+        if context.get("git_status") == "modified" and any(
+            word in lowered_prompt for word in ["commit", "push"]
+        ):
+            return Intent(
+                name="dev.commit", confidence=0.9, summary="User wants to commit/push changes"
+            )
+
         # Fallback to existing rule-based planner
         # The planner's context parameter expects Dict[str, str], so convert if necessary
         str_context = {k: str(v) for k, v in context.items()}
         return self.planner.plan(prompt, str_context)
-

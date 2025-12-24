@@ -29,6 +29,7 @@ PERFORMANCE_METRICS = {
     "SystemAgent": {"success_rate": 0.95},
 }
 
+
 class AgentEvolverAgent:
     name = "AgentEvolverAgent"
     description = "Manages the self-evolving processes within MaxOS."
@@ -63,7 +64,7 @@ class AgentEvolverAgent:
                 agent=self.name,
                 status="not_implemented",
                 message="This AgentEvolver command is not yet implemented.",
-                payload={"intent": request.intent, "text": request.text}
+                payload={"intent": request.intent, "text": request.text},
             )
 
     def _generate_task(self) -> AgentResponse:
@@ -72,12 +73,12 @@ class AgentEvolverAgent:
         """
         task = random.choice(PREDEFINED_TASKS)
         # Simulate task execution and performance update
-        self._update_performance(task["intent"].split('.')[0], random.choice([True, False]))
+        self._update_performance(task["intent"].split(".")[0], random.choice([True, False]))
         return AgentResponse(
             agent=self.name,
             status="success",
             message=f"Generated new task: {task['text']}",
-            payload=task
+            payload=task,
         )
 
     def _refine_policy(self) -> AgentResponse:
@@ -95,7 +96,7 @@ class AgentEvolverAgent:
             agent=self.name,
             status="success",
             message=f"Refined policy for {agent_to_refine}.",
-            payload={"refined_policies": self.policies}
+            payload={"refined_policies": self.policies},
         )
 
     def _update_performance(self, agent_name: str, success: bool):
@@ -104,7 +105,9 @@ class AgentEvolverAgent:
         """
         if agent_name in self.performance_metrics:
             # Simulate a simple moving average
-            self.performance_metrics[agent_name]["success_rate"] = (self.performance_metrics[agent_name]["success_rate"] * 9 + (1 if success else 0)) / 10
+            self.performance_metrics[agent_name]["success_rate"] = (
+                self.performance_metrics[agent_name]["success_rate"] * 9 + (1 if success else 0)
+            ) / 10
 
     def _get_status(self) -> AgentResponse:
         """
@@ -121,5 +124,5 @@ class AgentEvolverAgent:
                 "performance_evaluation": "enabled",
                 "policies": self.policies,
                 "performance_metrics": self.performance_metrics,
-            }
+            },
         )

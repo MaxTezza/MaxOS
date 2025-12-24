@@ -1,11 +1,12 @@
 """Google Analytics telemetry integration for MaxOS."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import os
 import threading
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import aiohttp
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class GoogleAnalytics:
     """Google Analytics 4 Measurement Protocol client."""
 
-    def __init__(self, measurement_id: Optional[str] = None, api_secret: Optional[str] = None):
+    def __init__(self, measurement_id: str | None = None, api_secret: str | None = None):
         """
         Initialize Google Analytics client.
 
@@ -28,7 +29,7 @@ class GoogleAnalytics:
         self.api_secret = api_secret or os.environ.get("GA_API_SECRET")
         self.endpoint = "https://www.google-analytics.com/mp/collect"
         self.enabled = bool(self.measurement_id and self.api_secret)
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
         self._session_lock = asyncio.Lock()
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -49,7 +50,7 @@ class GoogleAnalytics:
         self,
         event_name: str,
         client_id: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> bool:
         """
         Send an event to Google Analytics.
@@ -83,14 +84,18 @@ class GoogleAnalytics:
 
         try:
             session = await self._get_session()
-            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=5)) as response:
+            async with session.post(
+                url, json=payload, timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
                 return response.status == 204
         except Exception as e:
             # Silently fail - telemetry should not break the app
             logger.debug(f"GA telemetry error: {e}")
             return False
 
-    async def send_page_view(self, client_id: str, page_path: str, page_title: Optional[str] = None) -> bool:
+    async def send_page_view(
+        self, client_id: str, page_path: str, page_title: str | None = None
+    ) -> bool:
         """
         Send a page view event.
 
@@ -113,7 +118,7 @@ class GoogleAnalytics:
         client_id: str,
         agent_name: str,
         success: bool,
-        duration_ms: Optional[int] = None,
+        duration_ms: int | None = None,
     ) -> bool:
         """
         Send an agent execution event.
@@ -138,11 +143,11 @@ class GoogleAnalytics:
 
 
 # Singleton instance and lock
-_ga_instance: Optional[GoogleAnalytics] = None
+_ga_instance: GoogleAnalytics | None = None
 _ga_lock = threading.Lock()
 
 
-def get_ga_client(settings: Optional[Dict[str, Any]] = None) -> GoogleAnalytics:
+def get_ga_client(settings: dict[str, Any] | None = None) -> GoogleAnalytics:
     """
     Get or create the Google Analytics client singleton (thread-safe).
 
@@ -153,7 +158,7 @@ def get_ga_client(settings: Optional[Dict[str, Any]] = None) -> GoogleAnalytics:
         GoogleAnalytics instance
     """
     global _ga_instance
-    
+
     if _ga_instance is None:
         with _ga_lock:
             # Double-check pattern for thread safety

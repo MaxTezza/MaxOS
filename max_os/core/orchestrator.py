@@ -1,4 +1,5 @@
 """Central orchestrator that parses intents and dispatches to agents."""
+
 from __future__ import annotations
 
 import asyncio
@@ -32,12 +33,18 @@ from max_os.utils.logging import configure_logging
 class AIOperatingSystem:
     """Registers all agents and dispatches user commands."""
 
-    def __init__(self, settings: Settings | None = None, agents: list[BaseAgent] | None = None, enable_learning: bool = True, auto_start_loops: bool = False) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        agents: list[BaseAgent] | None = None,
+        enable_learning: bool = True,
+        auto_start_loops: bool = False,
+    ) -> None:
         self.settings = settings or load_settings()
         configure_logging(self.settings)
         self.logger = structlog.get_logger("max_os.orchestrator")
         self.planner = IntentPlanner()
-        self.intent_classifier = IntentClassifier(self.planner) # Initialize IntentClassifier
+        self.intent_classifier = IntentClassifier(self.planner)  # Initialize IntentClassifier
         self.agents: list[BaseAgent] = agents or self._init_agents()
         self.memory = ConversationMemory(limit=50, settings=self.settings)
         self.last_context: dict[str, object] | None = None
@@ -56,14 +63,19 @@ class AIOperatingSystem:
                 registry=AGENT_REGISTRY,
             )
             # Find the AgentEvolverAgent instance
-            agent_evolver = next((agent for agent in self.agents if isinstance(agent, AgentEvolverAgent)), None)
+            agent_evolver = next(
+                (agent for agent in self.agents if isinstance(agent, AgentEvolverAgent)), None
+            )
             self.realtime_learning_engine = RealTimeLearningEngine(self.personality, agent_evolver)
             if auto_start_loops:
                 self.start_learning_loops()
-            self.logger.info("Learning system enabled", extra={
-                "verbosity": self.personality.verbosity_preference,
-                "technical_level": self.personality.technical_level
-            })
+            self.logger.info(
+                "Learning system enabled",
+                extra={
+                    "verbosity": self.personality.verbosity_preference,
+                    "technical_level": self.personality.technical_level,
+                },
+            )
         else:
             self.context_engine = None
             self.prediction_spawner = None
@@ -107,9 +119,11 @@ class AIOperatingSystem:
     def register_agent(self, agent: BaseAgent) -> None:
         self.agents.append(agent)
 
-    async def handle_text(self, text: str, context: dict[str, object] | None = None) -> AgentResponse:
+    async def handle_text(
+        self, text: str, context: dict[str, object] | None = None
+    ) -> AgentResponse:
         context = context or {}
-        active_window = None # Initialize active_window
+        active_window = None  # Initialize active_window
         if self.enable_learning and self.context_engine and "signals" not in context:
             context["signals"] = await self._gather_context_signals()
             git_state = context["signals"].get("git", {})
@@ -124,7 +138,9 @@ class AIOperatingSystem:
         self.memory.add_user(text)
         intent = await self._plan_intent(text, context)
         self.last_context = context
-        self.logger.info("Planned intent", extra={"intent": intent.name, "slots": intent.to_context()})
+        self.logger.info(
+            "Planned intent", extra={"intent": intent.name, "slots": intent.to_context()}
+        )
 
         if self.enable_learning and self.prediction_spawner:
             self.prediction_spawner.record_user_intent(intent.name)
@@ -132,7 +148,7 @@ class AIOperatingSystem:
         # Add last action to context for pattern detection
         recent_history = self.memory.history[-2:] if len(self.memory.history) >= 2 else []
         if recent_history and recent_history[0].role == "user":
-            context['last_action'] = recent_history[0].content
+            context["last_action"] = recent_history[0].content
 
         request = AgentRequest(intent=intent.name, text=text, context=context)
 
@@ -152,7 +168,11 @@ class AIOperatingSystem:
                 self.memory.add_agent(response)
                 self.logger.info(
                     "Agent handled request",
-                    extra={"agent": response.agent, "status": response.status, "intent": intent.name},
+                    extra={
+                        "agent": response.agent,
+                        "status": response.status,
+                        "intent": intent.name,
+                    },
                 )
                 return response
 
@@ -168,13 +188,14 @@ class AIOperatingSystem:
 
         return fallback
 
-    def _apply_learning(self, user_input: str, response: AgentResponse, context: dict, agent_name: str) -> AgentResponse:
+    def _apply_learning(
+        self, user_input: str, response: AgentResponse, context: dict, agent_name: str
+    ) -> AgentResponse:
         """Apply personality learning and response optimization."""
         # Estimate technical complexity
-        domain = context.get('domain', 'general')
+        domain = context.get("domain", "general")
         technical_complexity = self.prompt_filter.estimate_technical_complexity(
-            response.message,
-            domain
+            response.message, domain
         )
 
         # Record interaction for learning
@@ -185,8 +206,8 @@ class AIOperatingSystem:
             response_length=len(response.message),
             technical_complexity=technical_complexity,
             success=(response.status == "success"),
-            context={'domain': domain},
-            user_reaction=None  # Will be updated based on future interactions
+            context={"domain": domain},
+            user_reaction=None,  # Will be updated based on future interactions
         )
 
         # Learn from interaction
@@ -199,10 +220,7 @@ class AIOperatingSystem:
         # Add predictive suggestions if available
         predictions = self.personality.predict_next_need(context)
         if predictions:
-            optimized = self.prompt_filter.add_predictive_suggestions(
-                optimized,
-                predictions
-            )
+            optimized = self.prompt_filter.add_predictive_suggestions(optimized, predictions)
 
         return optimized
 

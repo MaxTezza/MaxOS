@@ -30,8 +30,10 @@ class RealTimeLearningEngine:
         self.max_queue = max_queue  # Max interactions to hold in memory
         self.batch_size = batch_size  # How many interactions to process at once
         self.observation_interval = observation_interval  # seconds between batch processing
-        self._recent_metrics: deque[dict[str, float]] = deque(maxlen=5) # Store last 5 batch metrics
-        self.anomaly_threshold = 0.5 # If success rate drops below this, log a warning
+        self._recent_metrics: deque[dict[str, float]] = deque(
+            maxlen=5
+        )  # Store last 5 batch metrics
+        self.anomaly_threshold = 0.5  # If success rate drops below this, log a warning
         self.anomaly_detector = IsolationForest(random_state=42)
         self.anomaly_detector_trained = False
 
@@ -109,9 +111,14 @@ class RealTimeLearningEngine:
         if not self.anomaly_detector_trained:
             # Initial training with a small, arbitrary dataset if no data yet
             # In a real scenario, you'd accumulate more data before initial fit
-            if len(self._recent_metrics) >= 2: # Need at least 2 samples to fit
+            if len(self._recent_metrics) >= 2:  # Need at least 2 samples to fit
                 training_data = [
-                    [m["success_rate"], m["avg_response_length"], m["avg_technical_complexity"], m["top_domain_ratio"]]
+                    [
+                        m["success_rate"],
+                        m["avg_response_length"],
+                        m["avg_technical_complexity"],
+                        m["top_domain_ratio"],
+                    ]
                     for m in self._recent_metrics
                 ]
                 self.anomaly_detector.fit(training_data)
@@ -120,7 +127,12 @@ class RealTimeLearningEngine:
             # Partial fit or re-fit with new data (IsolationForest doesn't have partial_fit)
             # For simplicity, we'll refit with recent metrics + current batch
             all_recent_data = [
-                [m["success_rate"], m["avg_response_length"], m["avg_technical_complexity"], m["top_domain_ratio"]]
+                [
+                    m["success_rate"],
+                    m["avg_response_length"],
+                    m["avg_technical_complexity"],
+                    m["top_domain_ratio"],
+                ]
                 for m in self._recent_metrics
             ] + metric_values_2d
             if len(all_recent_data) > 1:
@@ -141,7 +153,7 @@ class RealTimeLearningEngine:
                 "Detected sustained focus on single domain (heuristic)",
                 extra=metrics,
             )
-        
+
         # ML-based anomaly detection
         if self.anomaly_detector_trained:
             metric_values = [
@@ -151,7 +163,7 @@ class RealTimeLearningEngine:
                 metrics["top_domain_ratio"],
             ]
             score = self.anomaly_detector.decision_function([metric_values])
-            if score < 0: # Negative score indicates an anomaly
+            if score < 0:  # Negative score indicates an anomaly
                 self.logger.warning(
                     "Anomaly detected in learning batch (IsolationForest)",
                     extra={**metrics, "anomaly_score": score[0]},

@@ -1,4 +1,5 @@
 """Network agent for Wi-Fi, VPN, and firewall automation."""
+
 from __future__ import annotations
 
 import socket
@@ -56,16 +57,20 @@ class NetworkAgent:
 
                 for addr in addr_list:
                     if addr.family == socket.AF_INET:
-                        iface_info["addresses"].append({
-                            "type": "IPv4",
-                            "address": addr.address,
-                            "netmask": addr.netmask,
-                        })
+                        iface_info["addresses"].append(
+                            {
+                                "type": "IPv4",
+                                "address": addr.address,
+                                "netmask": addr.netmask,
+                            }
+                        )
                     elif addr.family == socket.AF_INET6:
-                        iface_info["addresses"].append({
-                            "type": "IPv6",
-                            "address": addr.address,
-                        })
+                        iface_info["addresses"].append(
+                            {
+                                "type": "IPv6",
+                                "address": addr.address,
+                            }
+                        )
 
                 interfaces.append(iface_info)
 
@@ -115,7 +120,7 @@ class NetworkAgent:
             )
 
             success = result.returncode == 0
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
 
             # Parse statistics
             stats_line = [line for line in lines if "packets transmitted" in line]
@@ -124,7 +129,7 @@ class NetworkAgent:
             stats = {}
             if stats_line:
                 # Example: "4 packets transmitted, 4 received, 0% packet loss, time 3004ms"
-                parts = stats_line[0].split(',')
+                parts = stats_line[0].split(",")
                 for part in parts:
                     if "transmitted" in part:
                         stats["transmitted"] = int(part.split()[0])
@@ -135,7 +140,7 @@ class NetworkAgent:
 
             if rtt_line:
                 # Example: "rtt min/avg/max/mdev = 10.123/15.456/20.789/3.456 ms"
-                rtt_part = rtt_line[0].split('=')[1].strip() if '=' in rtt_line[0] else ""
+                rtt_part = rtt_line[0].split("=")[1].strip() if "=" in rtt_line[0] else ""
                 if rtt_part:
                     stats["rtt"] = rtt_part
 
@@ -217,14 +222,20 @@ class NetworkAgent:
         """Show active network connections."""
         try:
             connections = []
-            for conn in psutil.net_connections(kind='inet'):
-                if conn.status == 'ESTABLISHED':
-                    connections.append({
-                        "local_address": f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else None,
-                        "remote_address": f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else None,
-                        "status": conn.status,
-                        "pid": conn.pid,
-                    })
+            for conn in psutil.net_connections(kind="inet"):
+                if conn.status == "ESTABLISHED":
+                    connections.append(
+                        {
+                            "local_address": (
+                                f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else None
+                            ),
+                            "remote_address": (
+                                f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else None
+                            ),
+                            "status": conn.status,
+                            "pid": conn.pid,
+                        }
+                    )
 
             # Get network IO stats
             io_stats = psutil.net_io_counters()
