@@ -72,6 +72,30 @@ logging:
   json: true
   file: "logs/maxos.log"
 
+storage:
+  # Hot cache (in-memory, fast)
+  redis:
+    url: "redis://localhost:6379/0"
+    ttl: 3600  # 1 hour
+
+  # Local persistent (offline, audit)
+  sqlite:
+    path: "~/.maxos/maxos.db"
+    auto_vacuum: true
+
+  # Cloud persistent (sync, multimodal)
+  firestore:
+    enabled: true
+    project_id: "${GOOGLE_CLOUD_PROJECT}"
+    credentials: "${GOOGLE_APPLICATION_CREDENTIALS}"
+    offline_mode: false  # Set true to disable cloud sync
+
+  # Blob storage
+  cloud_storage:
+    bucket: "${GOOGLE_CLOUD_PROJECT}-maxos-storage"
+    auto_create_bucket: true
+    location: "us-central1"
+
 telemetry:
   enabled: false
   endpoint: "https://telemetry.tezzaworks.ai"

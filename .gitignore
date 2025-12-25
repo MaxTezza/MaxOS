@@ -57,6 +57,13 @@ config/*.local.yaml
 /var/lib/maxos/
 audit.log
 
+# Storage files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.maxos/
+
 # System files
 .cache/
 *.pid
