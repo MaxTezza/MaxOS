@@ -42,15 +42,31 @@ agents:
       - "eth0"
 
 llm:
+  provider: gemini  # primary provider: gemini, anthropic, or openai
+  google_api_key: "set-me"  # Google API key for Gemini
   anthropic_api_key: "set-me"
   openai_api_key: "optional"
-  google_api_key: "optional"  # For multi-agent system with Gemini
+  
+  # Model configuration
+  model: gemini-1.5-pro  # or gemini-1.5-flash for faster responses
+  flash_model: gemini-1.5-flash  # for background workers
+  
+  # Generation settings
+  max_tokens: 8192
+  temperature: 0.1
+  timeout_seconds: 30
+  
+  # Context settings
+  context_window: 2000000  # 2M tokens for Gemini
+  persist_context: true
+  context_storage: filesystem  # or redis
+  
+  # Fallback settings
+  fallback_to_claude: true
+  fallback_to_rules: true  # Fall back to keyword matching if LLM fails
+  
+  # Legacy LLM settings (for intent classification)
   local_model_path: "/opt/models/llama3-8b.gguf"
-  # LLM-powered intent classification settings (uses orchestrator.provider and orchestrator.model)
-  fallback_to_rules: true         # Fall back to keyword matching if LLM fails
-  max_tokens: 500                 # Max tokens for classification response
-  temperature: 0.1                # Low temperature for consistent classification
-  timeout_seconds: 10             # Request timeout
 
 # Multi-agent orchestration system
 multi_agent:
