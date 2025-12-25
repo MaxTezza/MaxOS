@@ -48,8 +48,8 @@ llm:
   openai_api_key: "optional"
   
   # Model configuration
-  model: gemini-1.5-pro  # or gemini-1.5-flash for faster responses
-  flash_model: gemini-1.5-flash  # for background workers
+  model: gemini-3-flash  # Latest Dec 2025, fastest + pro-level reasoning
+  fallback_model: gemini-1.5-pro  # Fallback for 2M token context if needed
   
   # Generation settings
   max_tokens: 8192
@@ -57,7 +57,7 @@ llm:
   timeout_seconds: 30
   
   # Context settings
-  context_window: 2000000  # 2M tokens for Gemini
+  context_window: 1000000  # 1M tokens for Gemini 3 Flash
   persist_context: true
   context_storage: filesystem  # or redis
   

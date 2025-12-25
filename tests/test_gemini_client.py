@@ -36,7 +36,7 @@ async def test_gemini_client_init(mock_genai):
 
     assert client.api_key == "test-key"
     assert client.user_id == "test-user"
-    assert client.model_name == "gemini-1.5-pro"
+    assert client.model_name == "gemini-3-flash"
     assert client.max_tokens == 8192
     assert client.temperature == 0.1
     assert client.timeout == 30

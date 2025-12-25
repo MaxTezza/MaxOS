@@ -16,15 +16,17 @@ Natural-language control plane for Linux that routes user intents to trusted aut
   - **SystemAgent**: Real-time CPU/memory/disk metrics, process listing, systemd service status, system health monitoring
   - **DeveloperAgent**: Git operations (status, log, branches), repository management, project workflows
   - **NetworkAgent**: Interface enumeration, ping/connectivity tests, DNS lookups, active connection monitoring
-- **Google Gemini 1.5 Pro Integration** (NEW! 🧠💎):
+- **Google Gemini 3 Flash Integration** (NEW! 🧠💎⚡):
+  - **Latest Model (Dec 2025)**: Gemini 3 Flash - newest model with pro-level reasoning at Flash speed
   - **Multimodal Native**: Process text, images, audio, and video in a single API call
-  - **2M Token Context Window**: Hold entire user history, conversations, and state in memory
+  - **1M Token Context Window**: Hold extensive user history, conversations, and state in memory
+  - **Pro-Grade Reasoning**: Outperforms previous models in coding, multimodal tasks, and structured outputs
   - **40x Cost Reduction**: $0.075/1M tokens vs Claude's $3/1M for input tokens
   - **Streaming Responses**: Real-time interaction perfect for voice commands
   - **Context Management**: Persistent user profiles, pantry items, music history, routines
   - **Receipt Scanning**: Extract structured data from receipt photos automatically
   - **Voice Commands**: Send audio directly for natural language processing
-  - **Multi-Provider Fallback**: Automatic fallback to Claude/OpenAI if Gemini unavailable
+  - **Multi-Provider Fallback**: Automatic fallback to Gemini 1.5 Pro/Claude/OpenAI if needed
 - **LLM-Powered Intent Classification**:
   - **Intelligent Intent Recognition**: Uses Gemini/Claude/GPT-4 to classify user intents with high accuracy
   - **Entity Extraction**: Automatically extracts file paths, sizes, service names, and parameters
@@ -73,15 +75,16 @@ cp config/settings.example.yaml config/settings.yaml
 
 MaxOS supports multiple LLM providers with automatic fallback. Edit `config/settings.yaml`:
 
-**Option 1: Google Gemini (Recommended - Multimodal + 2M Token Context)**
+**Option 1: Google Gemini (Recommended - Latest Dec 2025 Model)**
 ```yaml
 llm:
   provider: gemini
   google_api_key: "your-google-api-key"
-  model: gemini-1.5-pro              # or gemini-1.5-flash for faster responses
+  model: gemini-3-flash              # Latest Dec 2025, fastest + pro-level reasoning
+  fallback_model: gemini-1.5-pro     # Fallback for 2M token context if needed
   
   # Context settings
-  context_window: 2000000            # 2M tokens
+  context_window: 1000000            # 1M tokens for Gemini 3 Flash
   persist_context: true
   
   # Fallback settings
@@ -111,10 +114,12 @@ orchestrator:
   model: "gpt-4"
 ```
 
-**Benefits of Gemini:**
+**Benefits of Gemini 3 Flash:**
+- ⚡ **Latest Model (Dec 2025)**: Newest Gemini model with cutting-edge capabilities
 - 🎯 **Multimodal**: Handle images, audio, video natively
-- 💰 **40x Cheaper**: $0.075/1M vs Claude's $3/1M input tokens
-- 🧠 **2M Token Context**: Hold entire user history in memory
+- 💰 **40x Cheaper**: $0.075/1M tokens vs Claude's $3/1M input tokens
+- 🧠 **1M Token Context**: Hold extensive user history in memory
+- 🚀 **Pro-Level Reasoning**: Best-in-class coding, multimodal, and structured output performance
 - 🎤 **Voice Support**: Process audio directly without transcription
 - 📸 **Receipt Scanning**: Extract structured data from photos
 

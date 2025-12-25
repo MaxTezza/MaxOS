@@ -57,7 +57,7 @@ class LLMProvider:
             providers.append(
                 ProviderConfig(
                     name="gemini",
-                    model=self.settings.llm.get("model", "gemini-1.5-pro"),
+                    model=self.settings.llm.get("model", "gemini-3-flash"),
                     priority=1 if primary_provider == "gemini" else 2,
                 )
             )
@@ -106,7 +106,7 @@ class LLMProvider:
         if not self.gemini_client or self.gemini_client.user_id != user_id:
             self.gemini_client = GeminiClient(
                 api_key=self.settings.llm.get("google_api_key"),
-                model=self.settings.llm.get("model", "gemini-1.5-pro"),
+                model=self.settings.llm.get("model", "gemini-3-flash"),
                 user_id=user_id,
                 max_tokens=self.settings.llm.get("max_tokens", 8192),
                 temperature=self.settings.llm.get("temperature", 0.1),
