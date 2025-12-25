@@ -23,7 +23,7 @@ class GeminiClient:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "gemini-1.5-pro",
+        model: str = "gemini-3-flash",
         user_id: str | None = None,
         max_tokens: int = 8192,
         temperature: float = 0.1,
@@ -33,7 +33,7 @@ class GeminiClient:
 
         Args:
             api_key: Google API key (defaults to GOOGLE_API_KEY env var)
-            model: Model name (gemini-1.5-pro or gemini-1.5-flash)
+            model: Model name (gemini-3-flash, gemini-1.5-pro, or gemini-1.5-flash)
             user_id: Optional user ID for context management
             max_tokens: Maximum tokens to generate
             temperature: Temperature for generation (0.0-1.0)
