@@ -60,6 +60,69 @@ multi_agent:
   consensus_threshold: 0.8
   route_complex_queries: true  # Auto-route complex queries to multi-agent
 
+# Google AI Stack - Voice, Vision, and Multimodal
+voice:
+  input:
+    provider: google_cloud
+    model: chirp-2  # Latest Google STT (2024)
+    language: en-US
+    streaming: true
+    google_cloud_project: "${GOOGLE_CLOUD_PROJECT}"
+    credentials: "${GOOGLE_APPLICATION_CREDENTIALS}"
+  
+  output:
+    provider: google_cloud
+    voice: en-US-Studio-O  # Ultra-realistic Studio voice
+    speaking_rate: 1.0
+    pitch: 0.0
+    google_cloud_project: "${GOOGLE_CLOUD_PROJECT}"
+    credentials: "${GOOGLE_APPLICATION_CREDENTIALS}"
+  
+  wake_word: "hey max"
+  wake_word_sensitivity: 0.5
+
+vision:
+  provider: mediapipe  # Google's MediaPipe
+  enable_hand_tracking: true
+  enable_face_tracking: true
+  enable_pose_tracking: false  # Optional
+  enable_eye_gaze: true
+  
+  camera_index: 0
+  resolution: [1280, 720]
+  fps: 60
+  
+  gestures:
+    enabled: true
+    custom_gestures_path: "config/custom_gestures.yaml"
+  
+  cursor_control:
+    mode: gaze  # or "hand" for hand-pointer
+    smoothing: 0.7
+    sensitivity: 1.0
+
+multimodal:
+  enabled: false  # Enable to use multimodal voice+vision control
+  gemini_model: gemini-2.0-flash  # Latest multimodal model
+  combine_voice_and_vision: true  # Send camera context with voice commands
+  gesture_override_voice: false  # Gestures take priority
+  
+  no_keyboard_mode: false  # Disable keyboard/mouse entirely
+  fallback_keyboard: true  # Emergency keyboard access
+
+cloud:
+  google_cloud_project: "${GOOGLE_CLOUD_PROJECT}"
+  google_application_credentials: "${GOOGLE_APPLICATION_CREDENTIALS}"
+  
+  # Optional: Use Google Cloud Vision for advanced image analysis
+  vision_api:
+    enabled: false
+    features:
+      - text_detection  # OCR
+      - object_localization
+      - face_detection
+      - landmark_detection
+
 policy:
   require_mfa: true
   confirmation_thresholds:
