@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 try:
     from google.cloud import texttospeech_v1
 except ImportError:  # pragma: no cover

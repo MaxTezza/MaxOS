@@ -305,6 +305,113 @@ See `config/multi_agent.yaml` for detailed configuration options including model
 
 For more details, see the example usage in `examples/multi_agent_example.py`.
 
+## 🌟 Google AI Stack - Voice, Vision & Multimodal Control
+
+MaxOS now supports Google's complete AI ecosystem for hands-free, multimodal interaction:
+
+### Features
+
+- 🎤 **Google Cloud Speech-to-Text (Chirp 2)** - Real-time voice recognition with 100-250ms latency
+- 🔊 **Google Cloud Text-to-Speech (Studio Voices)** - Ultra-realistic voice synthesis
+- 👁️ **MediaPipe Holistic** - Simultaneous hand, face, and pose tracking
+- 🧠 **Gemini 2.0 Flash** - Multimodal AI (text + image understanding)
+- 👋 **Gesture Recognition** - Control with hand gestures (thumbs up, peace sign, pointing, etc.)
+- 👀 **Eye Gaze Tracking** - Move cursor with your eyes
+- 🎯 **Wake Word Detection** - "Hey Max" voice activation
+
+### Quick Start
+
+1. **Install Google AI Stack**
+
+```bash
+pip install -e ".[google]"
+```
+
+2. **Setup Credentials**
+
+For Gemini API:
+```bash
+export GOOGLE_API_KEY="your-gemini-api-key"
+```
+
+For Cloud Speech/TTS (optional):
+```bash
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials.json"
+```
+
+3. **Enable in Configuration**
+
+Edit `config/settings.yaml`:
+```yaml
+multimodal:
+  enabled: true
+  gemini_model: gemini-2.0-flash
+  combine_voice_and_vision: true
+
+voice:
+  wake_word: "hey max"
+  input:
+    provider: google_cloud
+    model: chirp-2
+  output:
+    provider: google_cloud
+    voice: en-US-Studio-O
+
+vision:
+  provider: mediapipe
+  enable_hand_tracking: true
+  enable_face_tracking: true
+  enable_eye_gaze: true
+```
+
+4. **Run the Demo**
+
+```bash
+# Test individual components
+python examples/test_mediapipe.py      # Hand/face tracking
+python examples/test_google_stt.py     # Speech-to-text
+python examples/test_google_tts.py     # Text-to-speech
+
+# Full multimodal demo
+python examples/full_google_stack_demo.py
+```
+
+### Cost Estimates
+
+**Free Tier (Monthly):**
+- Gemini API: First 1,500 requests/day FREE
+- Speech-to-Text: First 60 minutes FREE
+- Text-to-Speech: First 1M characters FREE
+- MediaPipe: FREE (runs locally)
+
+**Light Usage (~100 commands/day): ~$7.50/month**
+**Heavy Usage (~1,000 commands/day): ~$75/month**
+
+Still **10-100x cheaper** than OpenAI GPT-4!
+
+### Gesture Commands
+
+- 👍 **Thumbs up** - Approve action
+- ✌️ **Peace sign** - Take screenshot
+- 👆 **Pointing** - Select item
+- ✊ **Fist** - Grab/drag
+- ✋ **Open palm** - Release/stop
+
+### Documentation
+
+For complete setup instructions, see:
+- **[Google Stack Setup Guide](docs/GOOGLE_STACK_SETUP.md)** - Detailed setup with troubleshooting
+- **[Examples](examples/)** - Test scripts for each component
+
+### Why Google AI Stack?
+
+- ✅ **Best multimodal AI** - Gemini processes text, image, audio, video natively
+- ✅ **Most cost-effective** - 30-100x cheaper than competitors
+- ✅ **Tightest integration** - All Google products work seamlessly together
+- ✅ **Latest technology** - Gemini 2.0 (Dec 2024), Chirp 2 STT, Studio voices
+- ✅ **Local + Cloud hybrid** - MediaPipe runs locally, Cloud APIs for voice
+
 ## Repository Layout
 ```
 ai-os/

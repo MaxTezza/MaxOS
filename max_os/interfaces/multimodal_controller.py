@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any
 
 try:
     import cv2
@@ -38,14 +38,14 @@ class MultimodalController:
 
         # Lazy imports to avoid dependency issues
         try:
+            from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
             from max_os.interfaces.voice.google_stt import GoogleSTT
             from max_os.interfaces.voice.google_tts import GoogleTTS
-            from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
         except ImportError as e:
             raise RuntimeError(
                 f"Google AI stack dependencies not installed: {e}. "
                 "Install with: pip install 'maxos[google]'"
-            )
+            ) from e
 
         self.stt = GoogleSTT()
         self.tts = GoogleTTS()
@@ -87,7 +87,7 @@ class MultimodalController:
                 # Simulate listening - would use actual microphone stream
                 # async for transcript in self.stt.stream_recognize(self._get_audio_stream()):
                 #     await self._process_voice_command(transcript)
-                
+
                 await asyncio.sleep(0.1)
             except Exception as e:
                 print(f"Voice processing error: {e}")
@@ -149,7 +149,9 @@ class MultimodalController:
             self.vision.draw_landmarks(frame, results)
 
             # Add status text
-            status_text = f"Mode: {self.cursor_mode} | Voice: {'Active' if self.voice_active else 'Waiting'}"
+            status_text = (
+                f"Mode: {self.cursor_mode} | Voice: {'Active' if self.voice_active else 'Waiting'}"
+            )
             cv2.putText(
                 frame,
                 status_text,
@@ -192,7 +194,7 @@ class MultimodalController:
         # audio = await self.tts.synthesize(text)
         # play_audio(audio)
 
-    def _move_cursor_to_gaze(self, gaze: Dict[str, Any]):
+    def _move_cursor_to_gaze(self, gaze: dict[str, Any]):
         """Move system cursor based on eye gaze.
 
         Args:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     import cv2
@@ -53,7 +53,7 @@ class MediaPipeTracker:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
-    def process_frame(self, frame: Any) -> Dict[str, Any]:
+    def process_frame(self, frame: Any) -> dict[str, Any]:
         """Process camera frame and extract all landmarks.
 
         Args:
@@ -81,7 +81,7 @@ class MediaPipeTracker:
             "eye_gaze": self._calculate_eye_gaze(results.face_landmarks),
         }
 
-    def _detect_gestures(self, results: Any) -> List[str]:
+    def _detect_gestures(self, results: Any) -> list[str]:
         """Detect predefined gestures (point, fist, open palm, etc.).
 
         Args:
@@ -106,7 +106,7 @@ class MediaPipeTracker:
 
         return gestures
 
-    def _classify_hand_gesture(self, hand_landmarks: Any) -> Optional[str]:
+    def _classify_hand_gesture(self, hand_landmarks: Any) -> str | None:
         """Classify hand gesture based on landmarks.
 
         Args:
@@ -136,7 +136,7 @@ class MediaPipeTracker:
         finger_tips = [8, 12, 16, 20]
         finger_pips = [6, 10, 14, 18]
 
-        for tip_idx, pip_idx in zip(finger_tips, finger_pips):
+        for tip_idx, pip_idx in zip(finger_tips, finger_pips, strict=True):
             tip = landmarks[tip_idx]
             pip = landmarks[pip_idx]
             fingers_extended.append(tip.y < pip.y)  # Finger pointing up
@@ -157,7 +157,7 @@ class MediaPipeTracker:
 
         return None
 
-    def _calculate_eye_gaze(self, face_landmarks: Any) -> Optional[Dict[str, Any]]:
+    def _calculate_eye_gaze(self, face_landmarks: Any) -> dict[str, Any] | None:
         """Calculate eye gaze direction for cursor control.
 
         Args:
@@ -189,8 +189,12 @@ class MediaPipeTracker:
             return None
 
     def draw_landmarks(
-        self, image: Any, results: Dict[str, Any], draw_face: bool = True,
-        draw_pose: bool = True, draw_hands: bool = True
+        self,
+        image: Any,
+        results: dict[str, Any],
+        draw_face: bool = True,
+        draw_pose: bool = True,
+        draw_hands: bool = True,
     ) -> Any:
         """Draw landmarks on image.
 

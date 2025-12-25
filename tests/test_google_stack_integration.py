@@ -21,7 +21,10 @@ async def test_google_stt_initialization():
 @pytest.mark.asyncio
 async def test_google_stt_streaming():
     """Test Google Cloud Speech-to-Text streaming."""
-    with patch("max_os.interfaces.voice.google_stt.speech_v2") as mock_speech:
+    with (
+        patch("max_os.interfaces.voice.google_stt.speech_v2") as mock_speech,
+        patch("max_os.interfaces.voice.google_stt.Duration"),
+    ):
         from max_os.interfaces.voice.google_stt import GoogleSTT
 
         # Mock streaming response
@@ -32,10 +35,12 @@ async def test_google_stt_streaming():
         mock_response = Mock()
         mock_response.results = [mock_result]
 
+        # Create an async generator for the mock response
+        async def mock_stream(*args, **kwargs):
+            yield mock_response
+
         mock_client = AsyncMock()
-        mock_client.streaming_recognize = AsyncMock(
-            return_value=iter([mock_response])
-        )
+        mock_client.streaming_recognize = mock_stream
         mock_speech.SpeechAsyncClient.return_value = mock_client
 
         stt = GoogleSTT(project_id="test-project")
@@ -54,8 +59,14 @@ async def test_google_stt_streaming():
 @pytest.mark.asyncio
 async def test_google_tts_initialization():
     """Test Google Cloud TTS initialization."""
-    with patch("max_os.interfaces.voice.google_tts.texttospeech_v1"):
+    with patch("max_os.interfaces.voice.google_tts.texttospeech_v1") as mock_tts:
         from max_os.interfaces.voice.google_tts import GoogleTTS
+
+        # Mock VoiceSelectionParams to return actual values
+        mock_voice = Mock()
+        mock_voice.name = "en-US-Studio-O"
+        mock_voice.language_code = "en-US"
+        mock_tts.VoiceSelectionParams.return_value = mock_voice
 
         tts = GoogleTTS(voice_name="en-US-Studio-O")
         assert tts.voice.name == "en-US-Studio-O"
@@ -104,9 +115,11 @@ async def test_google_tts_emotion():
 
 def test_mediapipe_initialization():
     """Test MediaPipe tracker initialization."""
-    with patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp, patch(
-        "max_os.interfaces.vision.mediapipe_tracker.cv2"
-    ), patch("max_os.interfaces.vision.mediapipe_tracker.np"):
+    with (
+        patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp,
+        patch("max_os.interfaces.vision.mediapipe_tracker.cv2"),
+        patch("max_os.interfaces.vision.mediapipe_tracker.np"),
+    ):
         from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
 
         mock_holistic = Mock()
@@ -118,9 +131,11 @@ def test_mediapipe_initialization():
 
 def test_mediapipe_hand_tracking():
     """Test MediaPipe hand tracking."""
-    with patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp, patch(
-        "max_os.interfaces.vision.mediapipe_tracker.cv2"
-    ) as mock_cv2, patch("max_os.interfaces.vision.mediapipe_tracker.np") as mock_np:
+    with (
+        patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp,
+        patch("max_os.interfaces.vision.mediapipe_tracker.cv2") as mock_cv2,
+        patch("max_os.interfaces.vision.mediapipe_tracker.np") as mock_np,
+    ):
         from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
 
         # Mock numpy array
@@ -157,9 +172,11 @@ def test_mediapipe_hand_tracking():
 
 def test_mediapipe_gesture_detection():
     """Test MediaPipe gesture detection."""
-    with patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp, patch(
-        "max_os.interfaces.vision.mediapipe_tracker.cv2"
-    ), patch("max_os.interfaces.vision.mediapipe_tracker.np"):
+    with (
+        patch("max_os.interfaces.vision.mediapipe_tracker.mp") as mock_mp,
+        patch("max_os.interfaces.vision.mediapipe_tracker.cv2"),
+        patch("max_os.interfaces.vision.mediapipe_tracker.np"),
+    ):
         from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
 
         mock_holistic = Mock()
@@ -184,18 +201,27 @@ def test_mediapipe_gesture_detection():
 @pytest.mark.asyncio
 async def test_multimodal_controller_initialization():
     """Test multimodal controller initialization."""
-    with patch("max_os.interfaces.multimodal_controller.cv2") as mock_cv2, patch(
-        "max_os.interfaces.multimodal_controller.GoogleSTT"
-    ), patch("max_os.interfaces.multimodal_controller.GoogleTTS"), patch(
-        "max_os.interfaces.multimodal_controller.MediaPipeTracker"
-    ), patch(
-        "max_os.interfaces.multimodal_controller.GeminiClient"
+    with (
+        patch("max_os.interfaces.multimodal_controller.cv2") as mock_cv2,
+        patch("max_os.interfaces.voice.google_stt.speech_v2"),
+        patch("max_os.interfaces.voice.google_stt.Duration"),
+        patch("max_os.interfaces.voice.google_tts.texttospeech_v1"),
+        patch("max_os.interfaces.vision.mediapipe_tracker.mp"),
+        patch("max_os.interfaces.vision.mediapipe_tracker.cv2"),
+        patch("max_os.interfaces.vision.mediapipe_tracker.np"),
+        patch("max_os.core.gemini_client.genai") as mock_genai,
+        patch("max_os.core.gemini_client.Image"),
+        patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"}),
     ):
         from max_os.interfaces.multimodal_controller import MultimodalController
 
         # Mock VideoCapture
         mock_capture = Mock()
         mock_cv2.VideoCapture.return_value = mock_capture
+
+        # Mock genai configure
+        mock_genai.configure = Mock()
+        mock_genai.GenerativeModel.return_value = Mock()
 
         controller = MultimodalController()
 
@@ -210,7 +236,10 @@ async def test_multimodal_controller_initialization():
 @pytest.mark.asyncio
 async def test_gemini_multimodal_text_only():
     """Test Gemini client with text only."""
-    with patch("max_os.core.gemini_client.genai") as mock_genai:
+    with (
+        patch("max_os.core.gemini_client.genai") as mock_genai,
+        patch("max_os.core.gemini_client.Image"),
+    ):
         from max_os.core.gemini_client import GeminiClient
 
         # Mock model response
@@ -222,7 +251,7 @@ async def test_gemini_multimodal_text_only():
         mock_genai.GenerativeModel.return_value = mock_model
         mock_genai.configure = Mock()
 
-        client = GeminiClient()
+        client = GeminiClient(api_key="test-api-key")
         response = await client.process(text="Hello!")
 
         assert response == "Hello! I'm Gemini."
@@ -231,9 +260,10 @@ async def test_gemini_multimodal_text_only():
 @pytest.mark.asyncio
 async def test_gemini_multimodal_with_image():
     """Test Gemini client with text and image."""
-    with patch("max_os.core.gemini_client.genai") as mock_genai, patch(
-        "max_os.core.gemini_client.Image"
-    ) as mock_image_module:
+    with (
+        patch("max_os.core.gemini_client.genai") as mock_genai,
+        patch("max_os.core.gemini_client.Image") as mock_image_module,
+    ):
         from max_os.core.gemini_client import GeminiClient
 
         # Mock PIL Image
@@ -249,7 +279,7 @@ async def test_gemini_multimodal_with_image():
         mock_genai.GenerativeModel.return_value = mock_model
         mock_genai.configure = Mock()
 
-        client = GeminiClient()
+        client = GeminiClient(api_key="test-api-key")
         response = await client.process(text="What's in this image?", image="cat.jpg")
 
         assert response == "I see a cat in the image."

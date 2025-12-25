@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 try:
     from google.cloud import speech_v2
@@ -19,7 +18,7 @@ class GoogleSTT:
     def __init__(
         self,
         language_code: str = "en-US",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         location: str = "global",
     ):
         """Initialize Google Cloud Speech-to-Text client.
