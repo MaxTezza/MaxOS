@@ -17,6 +17,11 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     OpenAI = None  # type: ignore
 
+try:
+    import google.generativeai as genai
+except Exception:  # pragma: no cover - optional dependency
+    genai = None  # type: ignore
+
 
 class LLMClient:
     """Thin wrapper that abstracts provider differences."""
@@ -45,6 +50,8 @@ class LLMClient:
             return self._run_anthropic(system_prompt, user_prompt, max_tokens)
         if self.provider == "openai" and self._has_openai():
             return self._run_openai(system_prompt, user_prompt, max_tokens)
+        if self.provider == "google" and self._has_google():
+            return self._run_google(system_prompt, user_prompt, max_tokens)
         return self._stub_completion(system_prompt, user_prompt)
     
     async def generate_async(
@@ -89,6 +96,9 @@ class LLMClient:
     def _has_openai(self) -> bool:
         return bool(self.settings.llm.get("openai_api_key") or os.environ.get("OPENAI_API_KEY"))
 
+    def _has_google(self) -> bool:
+        return bool(self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY"))
+
     def _run_anthropic(self, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
         if Anthropic is None:
             raise RuntimeError("anthropic package not installed")
@@ -121,6 +131,27 @@ class LLMClient:
             temperature=self.temperature,
         )
         return completion.choices[0].message.content or ""
+
+    def _run_google(self, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+        """Run Google Gemini completion."""
+        if genai is None:
+            raise RuntimeError("google-generativeai package not installed")
+        
+        api_key = self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY")
+        genai.configure(api_key=api_key)
+        
+        model = genai.GenerativeModel(
+            model_name=self.model,
+            generation_config={
+                "temperature": self.temperature,
+                "max_output_tokens": max_tokens,
+            },
+        )
+        
+        # Combine system and user prompts for Gemini
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        response = model.generate_content(full_prompt)
+        return response.text
 
     def _stub_completion(self, system_prompt: str, user_prompt: str) -> str:
         return f"[stub-response] {user_prompt[:120]}"

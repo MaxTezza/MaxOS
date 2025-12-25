@@ -1,0 +1,48 @@
+# Multi-Agent Orchestration Configuration
+
+multi_agent:
+  # Manager configuration
+  manager:
+    model: gemini-1.5-pro
+    temperature: 0.2
+    max_tokens: 4096
+    
+  # Worker configuration  
+  workers:
+    default_model: gemini-1.5-flash
+    
+    # Per-agent overrides
+    creative:
+      model: gemini-1.5-pro  # Use Pro for creative work
+      temperature: 0.8
+      
+    budget:
+      temperature: 0.0  # Precise for numbers
+      
+  # Debate settings
+  debate:
+    max_rounds: 3
+    consensus_threshold: 0.8
+    enable_executive_decision: true
+    
+  # Agent selection
+  agents:
+    research:
+      enabled: true
+      description: "Find factual information and data"
+      
+    creative:
+      enabled: true
+      description: "Generate innovative ideas"
+      
+    technical:
+      enabled: true
+      description: "Analyze technical feasibility"
+      
+    budget:
+      enabled: true
+      description: "Financial analysis and cost estimation"
+      
+    planning:
+      enabled: true
+      description: "Create plans and roadmaps"

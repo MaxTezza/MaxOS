@@ -188,6 +188,123 @@ agents:
       max_trash_size_gb: 50
 ```
 
+## 🚀 Multi-Agent Orchestration System
+
+MaxOS includes a sophisticated multi-agent orchestration system where specialized AI agents work in parallel on complex tasks, with a manager LLM that synthesizes results, moderates debates when agents disagree, and provides full transparency into all agent work.
+
+### Architecture Overview
+
+```
+User Query
+    ↓
+[Manager LLM - Gemini 1.5 Pro]
+    ↓
+Spawns multiple specialized agents in parallel
+    ↓
+┌─────────┬──────────┬───────────┬──────────┐
+│Research │ Creative │ Technical │  Budget  │
+│ Agent   │  Agent   │   Agent   │  Agent   │
+│(Flash)  │  (Pro)   │  (Flash)  │ (Flash)  │
+└─────────┴──────────┴───────────┴──────────┘
+    ↓         ↓          ↓          ↓
+  Results   Results    Results    Results
+    └─────────┴──────────┴──────────┘
+              ↓
+    [Manager Reviews All Results]
+              ↓
+    Are there contradictions? ──No──> [Synthesize Final Answer]
+              │
+             Yes
+              ↓
+    [Agents Debate - Max 3 Rounds]
+              ↓
+    [Manager Drives to Consensus]
+              ↓
+    [Final Answer + Full Work Logs]
+```
+
+### Features
+
+- ✅ **Parallel Agent Execution**: Multiple specialized agents work simultaneously using asyncio
+- ✅ **Smart Agent Selection**: Manager LLM automatically selects 2-4 most relevant agents
+- ✅ **Debate Mechanism**: When agents disagree, they debate for up to 3 rounds to reach consensus
+- ✅ **Executive Decisions**: Manager makes final call if consensus isn't reached
+- ✅ **Full Transparency**: Optional work logs show all agent reasoning and debate transcripts
+- ✅ **Specialized Agents**:
+  - **Research Agent**: Finds factual information and data
+  - **Creative Agent**: Generates innovative ideas (uses Pro model)
+  - **Technical Agent**: Analyzes technical feasibility
+  - **Budget Agent**: Financial analysis and cost estimation
+  - **Planning Agent**: Creates detailed plans and roadmaps
+
+### Quick Start
+
+1. **Enable Multi-Agent System**
+
+Edit `config/settings.yaml`:
+```yaml
+llm:
+  google_api_key: "your-google-api-key"  # Or set GOOGLE_API_KEY env var
+
+multi_agent:
+  enabled: true
+  max_debate_rounds: 3
+  consensus_threshold: 0.8
+  route_complex_queries: true  # Auto-route complex queries
+```
+
+2. **Use Programmatically**
+
+```python
+from max_os.core.multi_agent_orchestrator import MultiAgentOrchestrator
+
+config = {
+    "google_api_key": "your-api-key",
+    "max_debate_rounds": 3,
+}
+
+orchestrator = MultiAgentOrchestrator(config)
+
+result = await orchestrator.process_with_debate(
+    "Should I buy a house or keep renting in Seattle?",
+    context={"budget": 50000},
+    show_work=True
+)
+
+print(result.final_answer)
+print(f"Agents used: {result.agents_used}")
+print(f"Confidence: {result.confidence}")
+```
+
+3. **Use via API**
+
+```bash
+# Start the API server
+uvicorn max_os.interfaces.api.main:app --reload
+
+# POST request
+curl -X POST http://localhost:8000/multi-agent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Plan a week-long trip to Japan on $3000 budget",
+    "context": {"preferences": "food and culture"},
+    "show_work": true
+  }'
+```
+
+4. **Run Examples**
+
+```bash
+export GOOGLE_API_KEY="your-api-key"
+python examples/multi_agent_example.py
+```
+
+### Configuration
+
+See `config/multi_agent.yaml` for detailed configuration options including model selection, temperature settings per agent, debate round limits, and consensus thresholds.
+
+For more details, see the example usage in `examples/multi_agent_example.py`.
+
 ## Repository Layout
 ```
 ai-os/
