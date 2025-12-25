@@ -42,7 +42,9 @@ def setup_cloud_storage(project_id: str):
         bucket = storage_client.create_bucket(bucket_name, location="us-central1")
         print(f"✅ Cloud Storage bucket created: {bucket_name}")
     except Exception as e:
-        if "409" in str(e):  # Already exists
+        # Bucket likely already exists
+        error_str = str(e)
+        if "409" in error_str or "already exists" in error_str.lower():
             print(f"✅ Cloud Storage bucket already exists: {bucket_name}")
         else:
             raise

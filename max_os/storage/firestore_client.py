@@ -36,7 +36,7 @@ class FirestoreClient:
         # Ensure bucket exists
         try:
             self.bucket = self.storage_client.get_bucket(self.bucket_name)
-        except Exception:
+        except Exception:  # Bucket doesn't exist, create it
             self.bucket = self.storage_client.create_bucket(
                 self.bucket_name, location="us-central1"
             )
@@ -67,7 +67,7 @@ class FirestoreClient:
         user_id: str,
         voice_input: str,
         vision_context: dict | None = None,
-        gemini_response: str = None,
+        gemini_response: str | None = None,
         audio_url: str | None = None,
         image_url: str | None = None,
     ):

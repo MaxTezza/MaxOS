@@ -86,7 +86,7 @@ class StorageManager:
         user_id: str,
         voice_input: str,
         vision_context: dict | None = None,
-        gemini_response: str = None,
+        gemini_response: str | None = None,
         audio_data: bytes | None = None,
         image_data: bytes | None = None,
     ):
