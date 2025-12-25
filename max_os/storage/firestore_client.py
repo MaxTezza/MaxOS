@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 try:
-    from google.cloud import firestore
-    from google.cloud import storage
+    from google.cloud import firestore, storage
 except ImportError:  # pragma: no cover - google cloud optional
     firestore = None
     storage = None
@@ -44,7 +41,7 @@ class FirestoreClient:
                 self.bucket_name, location="us-central1"
             )
 
-    async def get_user_profile(self, user_id: str) -> Optional[Dict]:
+    async def get_user_profile(self, user_id: str) -> dict | None:
         """Get user profile from Firestore.
 
         Args:
@@ -56,7 +53,7 @@ class FirestoreClient:
         doc = await self.db.collection("users").document(user_id).get()
         return doc.to_dict() if doc.exists else None
 
-    async def update_user_profile(self, user_id: str, data: Dict):
+    async def update_user_profile(self, user_id: str, data: dict):
         """Update user profile in Firestore.
 
         Args:
@@ -69,10 +66,10 @@ class FirestoreClient:
         self,
         user_id: str,
         voice_input: str,
-        vision_context: Optional[Dict] = None,
+        vision_context: dict | None = None,
         gemini_response: str = None,
-        audio_url: Optional[str] = None,
-        image_url: Optional[str] = None,
+        audio_url: str | None = None,
+        image_url: str | None = None,
     ):
         """Store conversation with multimodal context.
 
@@ -93,13 +90,11 @@ class FirestoreClient:
             "image_url": image_url,
         }
 
-        await self.db.collection("users").document(user_id).collection(
-            "conversations"
-        ).add(conversation)
+        await self.db.collection("users").document(user_id).collection("conversations").add(
+            conversation
+        )
 
-    async def get_conversation_history(
-        self, user_id: str, limit: int = 50
-    ) -> List[Dict]:
+    async def get_conversation_history(self, user_id: str, limit: int = 50) -> list[dict]:
         """Get recent conversation history.
 
         Args:
@@ -123,18 +118,16 @@ class FirestoreClient:
 
         return list(reversed(results))
 
-    async def update_pantry(self, user_id: str, items: List[Dict]):
+    async def update_pantry(self, user_id: str, items: list[dict]):
         """Update pantry items.
 
         Args:
             user_id: User identifier
             items: List of pantry item dictionaries
         """
-        await self.db.collection("users").document(user_id).set(
-            {"pantry": items}, merge=True
-        )
+        await self.db.collection("users").document(user_id).set({"pantry": items}, merge=True)
 
-    async def get_pantry(self, user_id: str) -> List[Dict]:
+    async def get_pantry(self, user_id: str) -> list[dict]:
         """Get pantry items.
 
         Args:
@@ -153,7 +146,7 @@ class FirestoreClient:
         user_id: str,
         item: str,
         quantity: float = 1.0,
-        image_data: Optional[bytes] = None,
+        image_data: bytes | None = None,
     ):
         """Add item to pantry with optional image.
 
@@ -184,7 +177,7 @@ class FirestoreClient:
         self,
         user_id: str,
         name: str,
-        hand_landmarks: List[Dict],
+        hand_landmarks: list[dict],
         confidence: float = 1.0,
     ):
         """Save custom gesture training data.
@@ -206,7 +199,7 @@ class FirestoreClient:
             name
         ).set(gesture)
 
-    async def get_gestures(self, user_id: str) -> List[Dict]:
+    async def get_gestures(self, user_id: str) -> list[dict]:
         """Get all trained gestures.
 
         Args:

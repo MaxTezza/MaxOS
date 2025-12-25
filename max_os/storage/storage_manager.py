@@ -6,7 +6,6 @@ import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 try:
     import redis
@@ -86,10 +85,10 @@ class StorageManager:
         self,
         user_id: str,
         voice_input: str,
-        vision_context: Optional[Dict] = None,
+        vision_context: dict | None = None,
         gemini_response: str = None,
-        audio_data: Optional[bytes] = None,
-        image_data: Optional[bytes] = None,
+        audio_data: bytes | None = None,
+        image_data: bytes | None = None,
     ):
         """Store conversation in all layers.
 
@@ -146,9 +145,7 @@ class StorageManager:
                 image_url,
             )
 
-    async def get_conversation_history(
-        self, user_id: str, limit: int = 50
-    ) -> List[Dict]:
+    async def get_conversation_history(self, user_id: str, limit: int = 50) -> list[dict]:
         """Get conversation history (Firestore first, SQLite fallback).
 
         Args:
@@ -183,7 +180,7 @@ class StorageManager:
             for row in cursor.fetchall()
         ]
 
-    async def sync_pantry(self, user_id: str, items: List[Dict]):
+    async def sync_pantry(self, user_id: str, items: list[dict]):
         """Sync pantry to Firestore.
 
         Args:
@@ -193,7 +190,7 @@ class StorageManager:
         if not self.offline_mode and self.firestore:
             await self.firestore.update_pantry(user_id, items)
 
-    async def get_pantry(self, user_id: str) -> List[Dict]:
+    async def get_pantry(self, user_id: str) -> list[dict]:
         """Get pantry from Firestore (with local cache).
 
         Args:
