@@ -7,6 +7,10 @@ They are skipped in CI/CD by default.
 import os
 import pytest
 
+# Test configuration
+TEST_MODEL = "claude-3-5-sonnet-20241022"
+TEST_MAX_TOKENS = 100
+
 
 @pytest.mark.integration
 @pytest.mark.skipif(not os.getenv("ANTHROPIC_API_KEY"), reason="ANTHROPIC_API_KEY not set")
@@ -17,8 +21,8 @@ def test_anthropic_api_connection():
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     message = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        max_tokens=100,
+        model=TEST_MODEL,
+        max_tokens=TEST_MAX_TOKENS,
         messages=[{"role": "user", "content": "Say 'test' and nothing else"}],
     )
 
@@ -35,10 +39,10 @@ def test_llm_client_with_real_anthropic():
     from max_os.utils.config import Settings
 
     settings = Settings()
-    settings.orchestrator = {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022"}
+    settings.orchestrator = {"provider": "anthropic", "model": TEST_MODEL}
     settings.llm = {
         "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY"),
-        "max_tokens": 100,
+        "max_tokens": TEST_MAX_TOKENS,
         "temperature": 0.1,
         "timeout_seconds": 30,
     }
