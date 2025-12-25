@@ -1,6 +1,5 @@
 """Integration tests for full Google AI stack."""
 
-import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest

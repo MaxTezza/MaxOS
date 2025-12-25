@@ -8,7 +8,7 @@ class ResearchAgent(SpecializedAgent):
 
     def __init__(self, llm):
         """Initialize research agent.
-        
+
         Args:
             llm: GeminiClient instance
         """

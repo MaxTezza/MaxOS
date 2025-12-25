@@ -14,7 +14,7 @@ class SpecializedAgent:
 
     def __init__(self, llm: GeminiClient, role: str, expertise: str):
         """Initialize specialized agent.
-        
+
         Args:
             llm: GeminiClient instance
             role: Agent role (e.g., "research", "creative")
@@ -26,11 +26,11 @@ class SpecializedAgent:
 
     async def process(self, query: str, context: dict[str, Any] | None = None) -> AgentResult:
         """Process query with agent's specialization.
-        
+
         Args:
             query: User query
             context: Additional context
-            
+
         Returns:
             AgentResult with answer and metadata
         """
@@ -60,11 +60,11 @@ class SpecializedAgent:
 
     def _build_specialized_prompt(self, query: str, context: dict[str, Any]) -> str:
         """Build prompt with agent's specialization.
-        
+
         Args:
             query: User query
             context: Additional context
-            
+
         Returns:
             Specialized prompt
         """
@@ -89,10 +89,10 @@ Your answer:
 
     def _assess_confidence(self, answer: str) -> float:
         """Extract or estimate confidence from answer.
-        
+
         Args:
             answer: Agent's answer
-            
+
         Returns:
             Confidence score (0.0-1.0)
         """
@@ -125,10 +125,10 @@ Your answer:
 
     def _extract_reasoning(self, answer: str) -> str:
         """Extract reasoning from answer.
-        
+
         Args:
             answer: Agent's answer
-            
+
         Returns:
             Extracted reasoning or full answer
         """

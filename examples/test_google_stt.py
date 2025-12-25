@@ -20,7 +20,7 @@ async def test_stt():
 
     try:
         stt = GoogleSTT(project_id=project_id)
-        print(f"✅ GoogleSTT initialized successfully")
+        print("✅ GoogleSTT initialized successfully")
         print(f"   Model: {stt.model}")
         print(f"   Language: {stt.language_code}")
         print()

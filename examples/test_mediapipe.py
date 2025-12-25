@@ -1,7 +1,6 @@
 """Test MediaPipe hand/face/pose tracking."""
 
 import cv2
-import numpy as np
 
 from max_os.interfaces.vision.mediapipe_tracker import MediaPipeTracker
 

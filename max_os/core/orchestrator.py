@@ -55,13 +55,15 @@ class AIOperatingSystem:
         if self.settings.multi_agent.get("enabled", False):
             try:
                 from max_os.core.multi_agent_orchestrator import MultiAgentOrchestrator
-                
+
                 # Build config for multi-agent system
                 ma_config = {
-                    "google_api_key": self.settings.multi_agent.get("google_api_key") 
-                                     or self.settings.llm.get("google_api_key"),
+                    "google_api_key": self.settings.multi_agent.get("google_api_key")
+                    or self.settings.llm.get("google_api_key"),
                     "max_debate_rounds": self.settings.multi_agent.get("max_debate_rounds", 3),
-                    "consensus_threshold": self.settings.multi_agent.get("consensus_threshold", 0.8),
+                    "consensus_threshold": self.settings.multi_agent.get(
+                        "consensus_threshold", 0.8
+                    ),
                 }
                 self.multi_agent = MultiAgentOrchestrator(ma_config)
                 self.logger.info("Multi-agent orchestrator enabled")
@@ -163,7 +165,7 @@ class AIOperatingSystem:
                 result = await self.multi_agent.process_with_debate(
                     user_query=text, context=context, show_work=True
                 )
-                
+
                 # Convert to AgentResponse
                 response = AgentResponse(
                     agent="multi_agent",
@@ -177,11 +179,11 @@ class AIOperatingSystem:
                         "manager_review": result.manager_review,
                     },
                 )
-                
+
                 self.memory.add_user(text)
                 self.memory.add_agent(response)
                 return response
-                
+
             except Exception as e:
                 self.logger.warning("Multi-agent processing failed, falling back", error=str(e))
                 # Fall through to normal processing
@@ -301,10 +303,10 @@ class AIOperatingSystem:
 
     def _is_complex_query(self, text: str) -> bool:
         """Determine if query needs multi-agent processing.
-        
+
         Args:
             text: User query
-            
+
         Returns:
             True if query is complex
         """
@@ -324,4 +326,3 @@ class AIOperatingSystem:
         ]
         text_lower = text.lower()
         return any(kw in text_lower for kw in complex_keywords)
-

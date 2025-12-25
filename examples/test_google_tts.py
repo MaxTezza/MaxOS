@@ -12,7 +12,7 @@ async def test_tts():
 
     try:
         tts = GoogleTTS(voice_name="en-US-Studio-O")
-        print(f"✅ GoogleTTS initialized successfully")
+        print("✅ GoogleTTS initialized successfully")
         print(f"   Voice: {tts.voice.name}")
         print(f"   Language: {tts.voice.language_code}")
         print()

@@ -28,13 +28,13 @@ from max_os.models.multi_agent import (
 
 class MultiAgentOrchestrator:
     """Orchestrates multiple specialized agents working in parallel.
-    
+
     Manager LLM synthesizes results and moderates debates.
     """
 
     def __init__(self, config: dict[str, Any]):
         """Initialize multi-agent orchestrator.
-        
+
         Args:
             config: Configuration dictionary with:
                 - google_api_key: Google API key
@@ -42,7 +42,7 @@ class MultiAgentOrchestrator:
                 - consensus_threshold: Consensus threshold (default: 0.8)
         """
         self.logger = structlog.get_logger("max_os.multi_agent")
-        
+
         # Manager uses Pro for complex synthesis
         self.manager = GeminiClient(
             model="gemini-1.5-pro",
@@ -68,7 +68,7 @@ class MultiAgentOrchestrator:
 
     def _initialize_agents(self) -> dict[str, Any]:
         """Create specialized agent instances.
-        
+
         Returns:
             Dictionary of agent instances
         """
@@ -99,17 +99,17 @@ class MultiAgentOrchestrator:
         show_work: bool = True,
     ) -> DebateResult:
         """Main entry point for multi-agent processing.
-        
+
         Args:
             user_query: The user's question/request
             context: Additional context (user history, preferences, etc)
             show_work: Whether to return full agent work logs
-            
+
         Returns:
             DebateResult with final answer and optional work logs
         """
         context = context or {}
-        
+
         self.logger.info("Starting multi-agent processing", query=user_query)
 
         # Step 1: Manager analyzes query and selects agents
@@ -143,15 +143,13 @@ class MultiAgentOrchestrator:
             confidence=review.confidence,
         )
 
-    async def _select_agents(
-        self, query: str, context: dict[str, Any]
-    ) -> list[str]:
+    async def _select_agents(self, query: str, context: dict[str, Any]) -> list[str]:
         """Manager decides which agents are needed.
-        
+
         Args:
             query: User query
             context: Additional context
-            
+
         Returns:
             List of selected agent names
         """
@@ -180,10 +178,10 @@ Return ONLY a JSON array with no additional text: ["agent1", "agent2", ...]
             if start >= 0 and end > start:
                 response = response[start:end]
             agents = json.loads(response)
-            
+
             # Validate agent names
             valid_agents = [a for a in agents if a in self.agents]
-            
+
             return valid_agents or ["research"]  # Fallback
 
         except Exception as e:
@@ -195,12 +193,12 @@ Return ONLY a JSON array with no additional text: ["agent1", "agent2", ...]
         self, agent_names: list[str], query: str, context: dict[str, Any]
     ) -> list[AgentResult]:
         """Execute multiple agents in parallel.
-        
+
         Args:
             agent_names: List of agent names to run
             query: User query
             context: Additional context
-            
+
         Returns:
             List of agent results
         """
@@ -226,15 +224,13 @@ Return ONLY a JSON array with no additional text: ["agent1", "agent2", ...]
 
         return agent_results
 
-    async def _manager_review(
-        self, query: str, agent_results: list[AgentResult]
-    ) -> ManagerReview:
+    async def _manager_review(self, query: str, agent_results: list[AgentResult]) -> ManagerReview:
         """Manager analyzes all agent results.
-        
+
         Args:
             query: User query
             agent_results: Results from all agents
-            
+
         Returns:
             ManagerReview with synthesis and debate decision
         """
@@ -298,12 +294,12 @@ Return ONLY valid JSON with no additional text:
         self, query: str, agent_results: list[AgentResult], conflicts: list[str]
     ) -> DebateLog:
         """Agents debate their different conclusions.
-        
+
         Args:
             query: User query
             agent_results: Results from all agents
             conflicts: List of identified conflicts
-            
+
         Returns:
             DebateLog with debate transcript and consensus
         """
@@ -311,7 +307,7 @@ Return ONLY valid JSON with no additional text:
 
         for round_num in range(self.max_debate_rounds):
             self.logger.info("Starting debate round", round=round_num + 1)
-            
+
             # Each agent defends their position
             round_responses = []
 
@@ -375,11 +371,11 @@ Round {round_num + 1} of debate:
 
     def _format_other_answers(self, agent_results: list[AgentResult], exclude_agent: str) -> str:
         """Format other agents' answers for debate.
-        
+
         Args:
             agent_results: All agent results
             exclude_agent: Agent to exclude
-            
+
         Returns:
             Formatted string of other answers
         """
@@ -394,11 +390,11 @@ Round {round_num + 1} of debate:
         self, query: str, debate_rounds: list[list[AgentDebateResponse]]
     ) -> ConsensusCheck:
         """Manager checks if agents have reached consensus.
-        
+
         Args:
             query: User query
             debate_rounds: All debate rounds so far
-            
+
         Returns:
             ConsensusCheck with decision
         """
@@ -430,7 +426,7 @@ Return ONLY valid JSON with no additional text:
             if start >= 0 and end > start:
                 response = response[start:end]
             data = json.loads(response)
-            
+
             return ConsensusCheck(
                 reached=data.get("reached", False),
                 final_answer=data.get("final_answer"),
@@ -443,23 +439,21 @@ Return ONLY valid JSON with no additional text:
 
     def _format_debate_round(self, round_responses: list[AgentDebateResponse]) -> str:
         """Format debate round for display.
-        
+
         Args:
             round_responses: Responses in this round
-            
+
         Returns:
             Formatted string
         """
-        return "\n\n".join(
-            [f"**{r.agent_name}:** {r.response}" for r in round_responses]
-        )
+        return "\n\n".join([f"**{r.agent_name}:** {r.response}" for r in round_responses])
 
     def _format_all_debate_rounds(self, debate_rounds: list[list[AgentDebateResponse]]) -> str:
         """Format all debate rounds.
-        
+
         Args:
             debate_rounds: All debate rounds
-            
+
         Returns:
             Formatted string
         """
@@ -473,11 +467,11 @@ Return ONLY valid JSON with no additional text:
         self, query: str, debate_rounds: list[list[AgentDebateResponse]]
     ) -> str:
         """Manager makes final call when debate doesn't reach consensus.
-        
+
         Args:
             query: User query
             debate_rounds: All debate rounds
-            
+
         Returns:
             Final executive decision
         """

@@ -17,15 +17,15 @@ class IntentClassifier:
     """
     Classifies user intent based on prompt and context, returning a structured Intent object.
     Designed as a swappable component for different classification strategies.
-    
+
     Uses LLM-powered classification when available, falls back to rule-based matching.
     """
 
     def __init__(
-        self, 
+        self,
         planner: IntentPlanner | None = None,
         settings: Settings | None = None,
-        llm_client: LLMClient | None = None
+        llm_client: LLMClient | None = None,
     ):
         self.planner = (
             planner or IntentPlanner()
@@ -41,13 +41,13 @@ class IntentClassifier:
         provider = self.settings.orchestrator.get("provider", "stub")
         if provider == "stub":
             return False
-        
+
         # Check if we have API keys
         if provider == "anthropic":
             return self.llm_client._has_anthropic()
         elif provider == "openai":
             return self.llm_client._has_openai()
-        
+
         return False
 
     async def classify(self, prompt: str, context: dict[str, Any]) -> Intent:
@@ -68,59 +68,58 @@ class IntentClassifier:
                 self.logger.info(
                     "LLM classification successful",
                     intent=intent.name,
-                    confidence=intent.confidence
+                    confidence=intent.confidence,
                 )
                 return intent
             except asyncio.TimeoutError:
                 self.logger.warning("LLM classification timed out, falling back to rules")
             except Exception as e:
                 self.logger.warning(
-                    "LLM classification failed, falling back to rules",
-                    error=str(e)
+                    "LLM classification failed, falling back to rules", error=str(e)
                 )
-        
+
         # Fallback to rule-based classification
         return await self._classify_with_rules(prompt, context)
-    
+
     async def _classify_with_llm(self, prompt: str, context: dict[str, Any]) -> Intent:
         """Classify intent using LLM.
-        
+
         Args:
             prompt: User input text
             context: Context dictionary
-            
+
         Returns:
             Intent object from LLM classification
-            
+
         Raises:
             asyncio.TimeoutError: If LLM request times out
             Exception: If LLM classification fails
         """
         system_prompt = get_system_prompt()
         user_prompt = build_user_prompt(prompt, context)
-        
+
         response_text = await self.llm_client.generate_async(system_prompt, user_prompt)
-        
+
         intent = create_intent_from_llm_response(response_text)
-        
+
         # Validate and enhance entities if needed
         if intent.slots:
             entities = {slot.name: slot.value for slot in intent.slots}
             whitelist = self.settings.agents.get("filesystem", {}).get("root_whitelist")
             validated_entities = extract_and_validate_entities(entities, whitelist)
-            
+
             # Update slots with validated entities
             intent.slots = [Slot(name=k, value=str(v)) for k, v in validated_entities.items()]
-        
+
         return intent
-    
+
     async def _classify_with_rules(self, prompt: str, context: dict[str, Any]) -> Intent:
         """Classify intent using rule-based matching.
-        
+
         Args:
             prompt: User input text
             context: Context dictionary
-            
+
         Returns:
             Intent object from rule-based classification
         """

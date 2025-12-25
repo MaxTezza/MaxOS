@@ -8,7 +8,7 @@ class CreativeAgent(SpecializedAgent):
 
     def __init__(self, llm):
         """Initialize creative agent.
-        
+
         Args:
             llm: GeminiClient instance
         """

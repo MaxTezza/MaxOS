@@ -46,9 +46,9 @@ async def main():
 
     # Check prerequisites
     try:
-        import cv2
-        import mediapipe as mp
-        import google.generativeai as genai
+        import cv2  # noqa: F401
+        import google.generativeai as genai  # noqa: F401
+        import mediapipe as mp  # noqa: F401
     except ImportError as e:
         print(f"❌ Missing dependency: {e}")
         print()
