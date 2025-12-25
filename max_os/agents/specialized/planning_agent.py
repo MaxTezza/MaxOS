@@ -8,7 +8,7 @@ class PlanningAgent(SpecializedAgent):
 
     def __init__(self, llm):
         """Initialize planning agent.
-        
+
         Args:
             llm: GeminiClient instance
         """

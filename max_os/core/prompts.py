@@ -95,25 +95,25 @@ def get_system_prompt() -> str:
 
 def build_user_prompt(user_input: str, context: dict | None = None) -> str:
     """Build the user prompt with optional context.
-    
+
     Args:
         user_input: The raw user input text
         context: Optional context dictionary (e.g., git_status, active_window)
-    
+
     Returns:
         Formatted user prompt string
     """
     if not context:
         return f"User request: {user_input}\n\nClassify this intent and extract entities."
-    
+
     # Include relevant context if available
     context_str = ""
     if context.get("git_status"):
         context_str += f"Git status: {context['git_status']}\n"
     if context.get("active_window"):
         context_str += f"Active window: {context['active_window']}\n"
-    
+
     if context_str:
         return f"{context_str}\nUser request: {user_input}\n\nClassify this intent and extract entities based on the context."
-    
+
     return f"User request: {user_input}\n\nClassify this intent and extract entities."

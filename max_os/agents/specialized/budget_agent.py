@@ -8,7 +8,7 @@ class BudgetAgent(SpecializedAgent):
 
     def __init__(self, llm):
         """Initialize budget agent.
-        
+
         Args:
             llm: GeminiClient instance
         """

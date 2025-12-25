@@ -7,8 +7,10 @@ from typing import Any
 
 try:
     import google.generativeai as genai
+    from PIL import Image
 except Exception:  # pragma: no cover - optional dependency
     genai = None  # type: ignore
+    Image = None  # type: ignore
 
 
 class GeminiClient:
@@ -22,7 +24,7 @@ class GeminiClient:
         max_tokens: int = 4096,
     ):
         """Initialize Gemini client.
-        
+
         Args:
             model: Model name (gemini-1.5-pro or gemini-1.5-flash)
             api_key: Google API key (or use GOOGLE_API_KEY env var)
@@ -34,11 +36,11 @@ class GeminiClient:
                 "google-generativeai package not installed. "
                 "Install with: pip install google-generativeai"
             )
-        
+
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
-        
+
         # Configure API key
         api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
@@ -46,9 +48,9 @@ class GeminiClient:
                 "Google API key required. Set GOOGLE_API_KEY environment variable "
                 "or pass api_key parameter."
             )
-        
+
         genai.configure(api_key=api_key)
-        
+
         # Initialize model
         self._model = genai.GenerativeModel(
             model_name=self.model,
@@ -58,26 +60,80 @@ class GeminiClient:
             },
         )
 
-    async def process(self, prompt: str) -> str:
-        """Process a prompt and return response.
-        
+    async def process(self, text: str | None = None, image: Any | None = None) -> str:
+        """Process a prompt with optional image and return response.
+
         Args:
-            prompt: Input prompt
-            
+            text: Input text prompt
+            image: Optional image (PIL Image, numpy array, or file path)
+
         Returns:
             Generated text response
         """
-        response = await self._model.generate_content_async(prompt)
+        # Build content list
+        content = []
+
+        if text:
+            content.append(text)
+
+        if image is not None:
+            # Handle different image types
+            if isinstance(image, str):
+                # File path
+                img = Image.open(image)
+                content.append(img)
+            elif hasattr(image, "shape"):  # numpy array
+                # Convert numpy array to PIL Image
+                if len(image.shape) == 3 and image.shape[2] == 3:
+                    # BGR to RGB conversion for OpenCV images
+                    image = image[:, :, ::-1]
+                img = Image.fromarray(image.astype("uint8"))
+                content.append(img)
+            else:
+                # Assume it's already a PIL Image
+                content.append(image)
+
+        if not content:
+            raise ValueError("Either text or image must be provided")
+
+        response = await self._model.generate_content_async(content)
         return response.text
 
-    def process_sync(self, prompt: str) -> str:
-        """Process a prompt synchronously.
-        
+    def process_sync(self, text: str | None = None, image: Any | None = None) -> str:
+        """Process a prompt with optional image synchronously.
+
         Args:
-            prompt: Input prompt
-            
+            text: Input text prompt
+            image: Optional image (PIL Image, numpy array, or file path)
+
         Returns:
             Generated text response
         """
-        response = self._model.generate_content(prompt)
+        # Build content list
+        content = []
+
+        if text:
+            content.append(text)
+
+        if image is not None:
+            # Handle different image types
+            if isinstance(image, str):
+                # File path
+                img = Image.open(image)
+                content.append(img)
+            elif hasattr(image, "shape"):  # numpy array
+                # Convert numpy array to PIL Image
+                if len(image.shape) == 3 and image.shape[2] == 3:
+                    # BGR to RGB conversion for OpenCV images
+                    image = image[:, :, ::-1]
+                img = Image.fromarray(image.astype("uint8"))
+                content.append(img)
+            else:
+                # Assume it's already a PIL Image
+                content.append(image)
+
+        if not content:
+            raise ValueError("Either text or image must be provided")
+
+        response = self._model.generate_content(content)
         return response.text

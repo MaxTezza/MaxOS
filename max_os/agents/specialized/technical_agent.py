@@ -8,7 +8,7 @@ class TechnicalAgent(SpecializedAgent):
 
     def __init__(self, llm):
         """Initialize technical agent.
-        
+
         Args:
             llm: GeminiClient instance
         """

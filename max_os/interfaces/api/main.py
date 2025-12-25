@@ -34,7 +34,7 @@ async def handle_intent(request: IntentRequest):
 async def multi_agent_query(request: MultiAgentRequest):
     """
     Process query with multi-agent debate system.
-    
+
     Example:
     POST /multi-agent
     {
@@ -42,7 +42,7 @@ async def multi_agent_query(request: MultiAgentRequest):
         "context": {"budget": 50000, "location": "Seattle"},
         "show_work": true
     }
-    
+
     Returns:
         final_answer: Final synthesized answer
         confidence: Confidence score (0.0-1.0)
@@ -66,12 +66,13 @@ async def multi_agent_query(request: MultiAgentRequest):
         "agents_used": result.agents_used,
         "work_logs": result.agent_work_logs if request.show_work else None,
         "debate_log": result.debate_log if request.show_work else None,
-        "manager_review": {
-            "needs_debate": result.manager_review.needs_debate,
-            "conflicts": result.manager_review.conflicts,
-            "confidence": result.manager_review.confidence,
-        }
-        if request.show_work
-        else None,
+        "manager_review": (
+            {
+                "needs_debate": result.manager_review.needs_debate,
+                "conflicts": result.manager_review.conflicts,
+                "confidence": result.manager_review.confidence,
+            }
+            if request.show_work
+            else None
+        ),
     }
-

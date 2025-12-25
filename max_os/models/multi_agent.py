@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass
@@ -12,10 +11,10 @@ class AgentResult:
 
     agent_name: str
     success: bool
-    answer: Optional[str]
+    answer: str | None
     confidence: float
-    reasoning: Optional[str] = None
-    error: Optional[str] = None
+    reasoning: str | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -24,7 +23,7 @@ class ManagerReview:
 
     needs_debate: bool
     conflicts: list[str]
-    synthesis: Optional[str]
+    synthesis: str | None
     confidence: float
 
 
@@ -42,7 +41,7 @@ class ConsensusCheck:
     """Result of checking if consensus has been reached."""
 
     reached: bool
-    final_answer: Optional[str]
+    final_answer: str | None
     reasoning: str
 
 
@@ -62,8 +61,8 @@ class DebateResult:
     """Final result from multi-agent processing with debate."""
 
     final_answer: str
-    agent_work_logs: Optional[list[AgentResult]]
+    agent_work_logs: list[AgentResult] | None
     manager_review: ManagerReview
-    debate_log: Optional[DebateLog]
+    debate_log: DebateLog | None
     agents_used: list[str]
     confidence: float

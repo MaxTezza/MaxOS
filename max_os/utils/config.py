@@ -20,12 +20,16 @@ SAMPLE_PATH = "config/settings.example.yaml"
 @dataclass
 class Settings:
     orchestrator: dict[str, Any] = field(default_factory=dict)
-    agents: dict[str, dict[str, Any]] = field(default_factory=dict)
+    agents: dict[str, Any] = field(default_factory=dict)
     llm: dict[str, Any] = field(default_factory=dict)
     policy: dict[str, Any] = field(default_factory=dict)
     logging: dict[str, Any] = field(default_factory=dict)
     telemetry: dict[str, Any] = field(default_factory=dict)
     multi_agent: dict[str, Any] = field(default_factory=dict)
+    voice: dict[str, Any] = field(default_factory=dict)
+    vision: dict[str, Any] = field(default_factory=dict)
+    multimodal: dict[str, Any] = field(default_factory=dict)
+    cloud: dict[str, Any] = field(default_factory=dict)
 
 
 def load_settings(path: str | None = None) -> Settings:
