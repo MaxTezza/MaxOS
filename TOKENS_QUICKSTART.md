@@ -23,19 +23,11 @@ This document summarizes the token configuration support added to MaxOS.
 
 ### Step 1: Get Your API Keys
 
-#### Anthropic API Key (Required)
-1. Visit https://console.anthropic.com/
-2. Create account or sign in
-3. Go to API Keys section
-4. Create new key
-5. Copy the key (starts with `sk-ant-`)
-
-#### OpenAI API Key (Optional)
-1. Visit https://platform.openai.com/
-2. Create account or sign in
-3. Go to https://platform.openai.com/api-keys
-4. Create new secret key
-5. Copy the key (starts with `sk-proj-` or `sk-`)
+#### Google API Key (Required)
+1. Visit https://makersuite.google.com/app/apikey
+2. Sign in with your Google account
+3. Click "Create API Key" in a project
+4. Copy the key (starts with `AIza`)
 
 #### Google Analytics (Optional)
 1. Visit https://analytics.google.com/
@@ -58,8 +50,7 @@ nano .env
 
 Edit `.env`:
 ```bash
-ANTHROPIC_API_KEY=sk-ant-api03-your-actual-key-here
-OPENAI_API_KEY=sk-proj-your-actual-key-here
+GOOGLE_API_KEY=AIza-your-actual-key-here
 GA_MEASUREMENT_ID=G-XXXXXXXXXX
 GA_API_SECRET=your_ga_api_secret_here
 ```
@@ -76,8 +67,7 @@ nano config/settings.yaml
 Edit the `llm` section:
 ```yaml
 llm:
-  anthropic_api_key: "sk-ant-api03-your-actual-key-here"
-  openai_api_key: "sk-proj-your-actual-key-here"
+  google_api_key: "AIza-your-actual-key-here"
 ```
 
 Edit the `telemetry` section:
@@ -91,8 +81,7 @@ telemetry:
 
 #### Option C: Using Environment Variables
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-api03-your-actual-key-here"
-export OPENAI_API_KEY="sk-proj-your-actual-key-here"
+export GOOGLE_API_KEY="AIza-your-actual-key-here"
 export GA_MEASUREMENT_ID="G-XXXXXXXXXX"
 export GA_API_SECRET="your_ga_api_secret_here"
 ```
@@ -105,7 +94,7 @@ python test_token_config.py
 ```
 
 You should see:
-- ✓ Set for ANTHROPIC_API_KEY (required)
+- ✓ Set for GOOGLE_API_KEY (required)
 - ✓ Set for other keys if you configured them
 
 ### Step 4: Run MaxOS
@@ -137,16 +126,13 @@ MaxOS loads configuration in this order (later overrides earlier):
 
 ## Features Enabled by Tokens
 
-### With ANTHROPIC_API_KEY:
+### With GOOGLE_API_KEY:
 - Natural language understanding
 - Intent parsing and routing
 - Agent orchestration
 - Personality learning
 - Predictive agent spawning
-
-### With OPENAI_API_KEY:
-- Fallback LLM when Anthropic is unavailable
-- Alternative model options
+- Multi-agent debate and consensus building
 
 ### With Google Analytics:
 - Usage tracking (privacy-focused)
@@ -157,7 +143,7 @@ MaxOS loads configuration in this order (later overrides earlier):
 ## Troubleshooting
 
 ### "No LLM client available"
-**Solution:** Set ANTHROPIC_API_KEY in .env or config/settings.yaml
+**Solution:** Set GOOGLE_API_KEY in .env or config/settings.yaml
 
 ### "Authentication failed"
 **Solution:** Check that your API key is correct and active
