@@ -17,8 +17,7 @@ This directory contains configuration files for MaxOS.
    ```
 
 3. **Update the API keys:**
-   - Replace `"set-me"` in `llm.anthropic_api_key` with your actual Anthropic API key
-   - Optionally replace `"optional"` in `llm.openai_api_key` with your OpenAI API key
+   - Replace `"set-me"` in `llm.google_api_key` with your actual Google API key
 
 ## Configuration Files
 
@@ -31,8 +30,7 @@ This directory contains configuration files for MaxOS.
 You can also configure MaxOS using environment variables instead of YAML files:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
-export OPENAI_API_KEY="your-key-here"
+export GOOGLE_API_KEY="your-key-here"
 ```
 
 Or use a `.env` file in the project root:
