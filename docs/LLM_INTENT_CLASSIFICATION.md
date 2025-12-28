@@ -1,6 +1,6 @@
 # LLM-Powered Intent Classification
 
-MaxOS Phase 1 introduces intelligent intent classification using Large Language Models (Claude/GPT-4) to replace simple keyword matching. This makes MaxOS truly understand natural language commands with high accuracy.
+MaxOS Phase 1 introduces intelligent intent classification using Large Language Models (Google Gemini) to replace simple keyword matching. This makes MaxOS truly understand natural language commands with high accuracy.
 
 ## Overview
 
@@ -16,6 +16,7 @@ MaxOS Phase 1 introduces intelligent intent classification using Large Language 
 4. **Natural Language**: Understands variations and complex commands
 5. **Security**: Path validation, size parsing, entity sanitization
 6. **Graceful Degradation**: Falls back to rules when offline or on timeout
+7. **Fast & Affordable**: Powered by Google's Gemini 1.5 Flash - fast responses at low cost
 
 ## Architecture
 
@@ -39,7 +40,7 @@ Entity extraction and validation:
 LLM client with async support:
 - Async generation with timeout handling
 - Configurable tokens/temperature
-- Support for Anthropic Claude and OpenAI GPT-4
+- Support for Google Gemini models
 - Thread-safe request handling
 
 #### 4. `max_os/core/intent_classifier.py` (Enhanced)
@@ -56,12 +57,11 @@ Main classification engine:
 ```yaml
 # config/settings.yaml
 orchestrator:
-  provider: "anthropic"           # or "openai"
-  model: "claude-3-5-sonnet"      # or "gpt-4"
+  provider: "google"              # Use Google Gemini
+  model: "gemini-1.5-flash"       # Fast and cost-effective
 
 llm:
-  anthropic_api_key: "sk-..."     # Or use ANTHROPIC_API_KEY env var
-  openai_api_key: "optional"      # Or use OPENAI_API_KEY env var
+  google_api_key: "AIza..."       # Or use GOOGLE_API_KEY env var
   
   # Intent classification settings
   fallback_to_rules: true         # Fall back to keyword matching if LLM fails
@@ -74,8 +74,7 @@ llm:
 
 ```bash
 # .env file
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
 ```
 
 ## Usage Examples

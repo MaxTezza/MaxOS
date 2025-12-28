@@ -114,8 +114,7 @@ telemetry:
 3. Update the `llm` section with your API keys:
    ```yaml
    llm:
-     anthropic_api_key: "your-actual-key-here"
-     openai_api_key: "your-actual-key-here"  # optional
+     google_api_key: "your-actual-key-here"
    ```
 
 ### Method 3: Using Environment Variables Directly
@@ -123,8 +122,7 @@ telemetry:
 You can also set environment variables in your shell:
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-api03-..."
-export OPENAI_API_KEY="sk-proj-..."
+export GOOGLE_API_KEY="AIza..."
 export GA_MEASUREMENT_ID="G-XXXXXXXXXX"
 export GA_API_SECRET="your_api_secret_here"
 ```
