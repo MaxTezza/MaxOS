@@ -85,11 +85,11 @@ async def test_classify_no_match_falls_back_to_default(intent_classifier, mock_p
 async def test_classify_with_llm_success(mock_planner, mock_settings):
     """Test successful LLM classification."""
     # Configure settings to use LLM
-    mock_settings.orchestrator = {"provider": "anthropic", "model": "claude-3-5-sonnet"}
+    mock_settings.orchestrator = {"provider": "google", "model": "gemini-1.5-flash"}
     
     # Create mock LLM client
     mock_llm = MagicMock()
-    mock_llm._has_anthropic.return_value = True
+    mock_llm._has_google.return_value = True
     mock_llm.generate_async = AsyncMock(return_value='{"intent": "file.search", "confidence": 0.95, "entities": {"search_query": "test"}}')
     
     classifier = IntentClassifier(planner=mock_planner, settings=mock_settings, llm_client=mock_llm)
@@ -109,10 +109,10 @@ async def test_classify_llm_timeout_falls_back(mock_planner, mock_settings):
     """Test that LLM timeout triggers fallback to rules."""
     import asyncio
     
-    mock_settings.orchestrator = {"provider": "anthropic", "model": "claude-3-5-sonnet"}
+    mock_settings.orchestrator = {"provider": "google", "model": "gemini-1.5-flash"}
     
     mock_llm = MagicMock()
-    mock_llm._has_anthropic.return_value = True
+    mock_llm._has_google.return_value = True
     mock_llm.generate_async = AsyncMock(side_effect=asyncio.TimeoutError("Timed out"))
     
     mock_planner.plan.return_value = Intent(
@@ -131,10 +131,10 @@ async def test_classify_llm_timeout_falls_back(mock_planner, mock_settings):
 @pytest.mark.asyncio
 async def test_classify_llm_error_falls_back(mock_planner, mock_settings):
     """Test that LLM error triggers fallback to rules."""
-    mock_settings.orchestrator = {"provider": "anthropic", "model": "claude-3-5-sonnet"}
+    mock_settings.orchestrator = {"provider": "google", "model": "gemini-1.5-flash"}
     
     mock_llm = MagicMock()
-    mock_llm._has_anthropic.return_value = True
+    mock_llm._has_google.return_value = True
     mock_llm.generate_async = AsyncMock(side_effect=Exception("API Error"))
     
     mock_planner.plan.return_value = Intent(
@@ -160,12 +160,12 @@ async def test_should_use_llm_with_stub_provider(mock_planner, mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_should_use_llm_with_anthropic(mock_planner, mock_settings):
-    """Test that anthropic provider with API key enables LLM."""
-    mock_settings.orchestrator = {"provider": "anthropic"}
+async def test_should_use_llm_with_google(mock_planner, mock_settings):
+    """Test that google provider with API key enables LLM."""
+    mock_settings.orchestrator = {"provider": "google"}
     
     mock_llm = MagicMock()
-    mock_llm._has_anthropic.return_value = True
+    mock_llm._has_google.return_value = True
     
     classifier = IntentClassifier(planner=mock_planner, settings=mock_settings, llm_client=mock_llm)
     
