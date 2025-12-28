@@ -75,7 +75,9 @@ class LLMClient:
             raise asyncio.TimeoutError(f"LLM request timed out after {timeout}s") from e
 
     def _has_google(self) -> bool:
-        return bool(self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY"))
+        api_key = self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY")
+        # Check if API key is valid (not empty, not placeholder)
+        return bool(api_key and api_key not in ("set-me", "optional", ""))
 
     def _run_google(self, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
         """Run Google Gemini completion."""
