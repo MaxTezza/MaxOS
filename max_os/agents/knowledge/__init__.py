@@ -7,7 +7,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from max_os.agents.base import AgentRequest, AgentResponse
-from max_os.utils.llm_api import LLMAPI
+from max_os.core.llm import LLMClient
+from max_os.utils.config import load_settings
 
 
 class KnowledgeAgent:
@@ -27,7 +28,8 @@ class KnowledgeAgent:
 
     def __init__(self, config: dict[str, object] | None = None) -> None:
         self.config = config or {}
-        self.llm_api = LLMAPI()  # Initialize LLM API client
+        settings = load_settings()
+        self.llm_client = LLMClient(settings)  # Initialize LLM client
         self.knowledge_base_path = Path(
             self.config.get("knowledge_base_path", Path.cwd())
         )  # Set to current working directory (ai-os root)
@@ -89,7 +91,13 @@ class KnowledgeAgent:
         try:
             content = file_path.read_text()
             prompt = f"Summarize and explain the following content:\n\n{content}"
-            response_text = await self.llm_api.generate_text(prompt)
+            # Use synchronous generate for simplicity in async context
+            import asyncio
+            response_text = await asyncio.to_thread(
+                self.llm_client.generate, 
+                "You are a helpful assistant that summarizes and explains content.", 
+                prompt
+            )
             return AgentResponse(
                 agent=self.name,
                 status="success",
@@ -126,7 +134,12 @@ class KnowledgeAgent:
 
         try:
             # Generate response using LLM
-            response_text = await self.llm_api.generate_text(augmented_prompt)
+            import asyncio
+            response_text = await asyncio.to_thread(
+                self.llm_client.generate,
+                "You are a helpful assistant that answers questions based on provided context.",
+                augmented_prompt
+            )
             return AgentResponse(
                 agent=self.name,
                 status="success",

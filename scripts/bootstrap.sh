@@ -124,13 +124,12 @@ log_level: INFO
 log_format: json
 log_file: logs/maxos.log
 
-# LLM Provider (anthropic, openai, or local)
+# LLM Provider (google or local)
 llm_provider: local
 llm_model: stub
 
 # API Keys (optional - leave empty to use local stub)
-anthropic_api_key: ""
-openai_api_key: ""
+google_api_key: ""
 
 # Agent Configuration
 agents:

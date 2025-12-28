@@ -38,15 +38,13 @@ class IntentClassifier:
 
     def _should_use_llm(self) -> bool:
         """Check if LLM classification should be used."""
-        provider = self.settings.orchestrator.get("provider", "stub")
+        provider = self.settings.orchestrator.get("provider", "google")
         if provider == "stub":
             return False
         
-        # Check if we have API keys
-        if provider == "anthropic":
-            return self.llm_client._has_anthropic()
-        elif provider == "openai":
-            return self.llm_client._has_openai()
+        # Check if we have Google API key
+        if provider == "google":
+            return self.llm_client._has_google()
         
         return False
 

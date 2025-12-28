@@ -28,7 +28,7 @@ async def demo():
         print(f"   Model: {settings.orchestrator.get('model')}")
     else:
         print("⚠️  LLM Classification: DISABLED (using rule-based fallback)")
-        print("   Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable LLM classification")
+        print("   Set GOOGLE_API_KEY to enable LLM classification")
     print()
     
     # Test cases

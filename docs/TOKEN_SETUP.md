@@ -4,60 +4,41 @@ This guide explains how to obtain and configure the required API tokens for MaxO
 
 ## Required Tokens
 
-### 1. Anthropic API Key (Required)
+### 1. Google API Key (Required)
 
-MaxOS uses Anthropic's Claude models for natural language understanding and agent orchestration.
+MaxOS uses Google's Gemini models for natural language understanding and agent orchestration.
 
 **How to get your token:**
-1. Visit [Anthropic Console](https://console.anthropic.com/)
-2. Sign up or log in to your account
-3. Navigate to API Keys section
-4. Click "Create Key" and copy your API key
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign up or log in with your Google account
+3. Click "Create API Key" and select a Google Cloud project (or create a new one)
+4. Copy your API key
 5. Add it to your `.env` file or `config/settings.yaml`
 
 **Usage in MaxOS:**
 ```bash
 # In .env file:
-ANTHROPIC_API_KEY=sk-ant-api03-...
+GOOGLE_API_KEY=AIza...
 
 # OR in config/settings.yaml:
 llm:
-  anthropic_api_key: "sk-ant-api03-..."
+  google_api_key: "AIza..."
 ```
 
-**Pricing:** Check current pricing at https://www.anthropic.com/pricing
+**Pricing:** 
+- Gemini 1.5 Flash: Free tier available (15 RPM, 1M TPM)
+- For higher usage, check pricing at https://ai.google.dev/pricing
 
----
-
-### 2. OpenAI API Key (Optional)
-
-OpenAI serves as a fallback LLM provider if Anthropic is unavailable.
-
-**How to get your token:**
-1. Visit [OpenAI Platform](https://platform.openai.com/)
-2. Sign up or log in to your account
-3. Go to [API Keys](https://platform.openai.com/api-keys)
-4. Click "Create new secret key"
-5. Copy the key (you won't be able to see it again!)
-6. Add it to your `.env` file or `config/settings.yaml`
-
-**Usage in MaxOS:**
-```bash
-# In .env file:
-OPENAI_API_KEY=sk-proj-...
-
-# OR in config/settings.yaml:
-llm:
-  openai_api_key: "sk-proj-..."
-```
-
-**Pricing:** Check current pricing at https://openai.com/pricing
+**Models Available:**
+- `gemini-1.5-flash`: Fast, cost-effective (recommended for most use cases)
+- `gemini-1.5-pro`: More capable for complex tasks
+- `gemini-1.0-pro`: Legacy model
 
 ---
 
 ## Optional Tokens
 
-### 3. Google Analytics (GA) Token
+### 2. Google Analytics (GA) Token
 
 If you want to track usage analytics for your MaxOS instance, you can configure Google Analytics.
 
@@ -133,8 +114,7 @@ telemetry:
 3. Update the `llm` section with your API keys:
    ```yaml
    llm:
-     anthropic_api_key: "your-actual-key-here"
-     openai_api_key: "your-actual-key-here"  # optional
+     google_api_key: "your-actual-key-here"
    ```
 
 ### Method 3: Using Environment Variables Directly
@@ -142,8 +122,7 @@ telemetry:
 You can also set environment variables in your shell:
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-api03-..."
-export OPENAI_API_KEY="sk-proj-..."
+export GOOGLE_API_KEY="AIza..."
 export GA_MEASUREMENT_ID="G-XXXXXXXXXX"
 export GA_API_SECRET="your_api_secret_here"
 ```

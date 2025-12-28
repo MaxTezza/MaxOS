@@ -17,12 +17,12 @@ Natural-language control plane for Linux that routes user intents to trusted aut
   - **DeveloperAgent**: Git operations (status, log, branches), repository management, project workflows
   - **NetworkAgent**: Interface enumeration, ping/connectivity tests, DNS lookups, active connection monitoring
 - **LLM-Powered Intent Classification** (NEW!):
-  - **Intelligent Intent Recognition**: Uses Claude/GPT-4 to classify user intents with high accuracy
+  - **Intelligent Intent Recognition**: Uses Google Gemini to classify user intents with high accuracy
   - **Entity Extraction**: Automatically extracts file paths, sizes, service names, and parameters
   - **Context-Aware**: Considers git status, active window, and other signals for better classification
   - **Graceful Fallback**: Falls back to rule-based matching when LLM unavailable or times out
   - **Security-First**: Path validation against whitelists, size parsing, and entity sanitization
-  - **Configurable**: Support for Anthropic Claude and OpenAI GPT with timeout controls
+  - **Fast and Cost-Effective**: Powered by Google's Gemini 1.5 Flash with excellent performance
 - **Self-Learning Personality System**:
   - **UserPersonalityModel**: Learns your communication style (verbosity, technical level, formality) in real-time
   - **PromptOptimizationFilter**: Adapts every response to match your preferences
@@ -54,8 +54,8 @@ cp .env.example .env
 cp config/settings.example.yaml config/settings.yaml
 
 # Edit .env and add your API keys (see docs/TOKEN_SETUP.md for detailed instructions)
-# Required: ANTHROPIC_API_KEY
-# Optional: OPENAI_API_KEY, GA_MEASUREMENT_ID, GA_API_SECRET
+# Required: GOOGLE_API_KEY
+# Optional: GA_MEASUREMENT_ID, GA_API_SECRET
 ```
 
 **📖 For detailed token setup instructions, see [docs/TOKEN_SETUP.md](docs/TOKEN_SETUP.md)**
@@ -66,12 +66,11 @@ MaxOS uses LLM-powered intent classification for better accuracy when API keys a
 
 ```yaml
 orchestrator:
-  provider: "anthropic"           # or "openai" for OpenAI GPT-4
-  model: "claude-3-5-sonnet"      # or "gpt-4" for OpenAI
+  provider: "google"              # Use Google Gemini
+  model: "gemini-1.5-flash"       # Fast and cost-effective model
 
 llm:
-  anthropic_api_key: "your-api-key-here"  # Or use ANTHROPIC_API_KEY env var
-  openai_api_key: "optional"              # Or use OPENAI_API_KEY env var
+  google_api_key: "your-api-key-here"  # Or use GOOGLE_API_KEY env var
   
   # Intent classification settings
   fallback_to_rules: true                # Fall back to keyword matching if LLM fails
@@ -85,6 +84,7 @@ llm:
 - 🔍 **Entity Extraction**: Automatically extracts file paths, sizes, service names from natural language
 - 🧠 **Context-Aware**: Considers current git status, active window, and other context signals
 - 🛡️ **Graceful Degradation**: Falls back to rule-based matching when offline or on timeout
+- ⚡ **Fast & Affordable**: Powered by Google's Gemini 1.5 Flash - fast responses at low cost
 
 **Without API Keys:** MaxOS automatically falls back to fast rule-based keyword matching.
 

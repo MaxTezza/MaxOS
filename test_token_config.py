@@ -16,13 +16,11 @@ def test_env_loading():
     print("Testing .env file loading...")
 
     # Check if python-dotenv loaded the .env file
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
-    openai_key = os.environ.get("OPENAI_API_KEY")
+    google_key = os.environ.get("GOOGLE_API_KEY")
     ga_measurement_id = os.environ.get("GA_MEASUREMENT_ID")
     ga_api_secret = os.environ.get("GA_API_SECRET")
 
-    print(f"  ANTHROPIC_API_KEY: {'✓ Set' if anthropic_key else '✗ Not set'}")
-    print(f"  OPENAI_API_KEY: {'✓ Set' if openai_key else '✗ Not set'}")
+    print(f"  GOOGLE_API_KEY: {'✓ Set' if google_key else '✗ Not set'}")
     print(f"  GA_MEASUREMENT_ID: {'✓ Set' if ga_measurement_id else '✗ Not set'}")
     print(f"  GA_API_SECRET: {'✓ Set' if ga_api_secret else '✗ Not set'}")
     print()
@@ -37,10 +35,7 @@ def test_settings_loading():
         print(f"  Orchestrator provider: {settings.orchestrator.get('provider', 'Not set')}")
         print(f"  Orchestrator model: {settings.orchestrator.get('model', 'Not set')}")
         print(
-            f"  LLM Anthropic key (from config): {'✓ Set' if settings.llm.get('anthropic_api_key') else '✗ Not set'}"
-        )
-        print(
-            f"  LLM OpenAI key (from config): {'✓ Set' if settings.llm.get('openai_api_key') else '✗ Not set'}"
+            f"  LLM Google key (from config): {'✓ Set' if settings.llm.get('google_api_key') else '✗ Not set'}"
         )
         print(f"  Telemetry enabled: {settings.telemetry.get('enabled', False)}")
 
