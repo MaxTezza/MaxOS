@@ -4,6 +4,9 @@
 
 Natural-language control plane for Linux that routes user intents to trusted autonomous agents. This repo contains the scaffolding, documentation, and first reference implementations for the MaxOS experiment described in the internal white papers.
 
+## 🚀 Quick Start for Beginners
+If you are new to AI or MaxOS, start here: **[Detailed Setup Guide (Dumbed Down)](docs/SETUP_GUIDE.md)**
+
 ## Why This Exists
 - Treat the OS as a conversation: describe your goal once, let orchestrated agents execute the steps.
 - Ship a privacy-conscious stack that can run fully offline with local LLMs but can burst to cloud APIs.
