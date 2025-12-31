@@ -11,13 +11,17 @@ from max_os.agents import (
     AGENT_REGISTRY,
     AgentEvolverAgent,
     AppLauncherAgent,
+    BrowserAgent,
     DeveloperAgent,
     FileSystemAgent,
     HomeAutomationAgent,
     KnowledgeAgent,
+    LibrarianAgent,
     MediaAgent,
     NetworkAgent,
+    SchedulerAgent,
     SystemAgent,
+    WatchmanAgent,
 )
 from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.core.intent import Intent
@@ -81,9 +85,18 @@ class AIOperatingSystem:
         self.prediction_spawner = None
         self.realtime_learning_engine = None
 
-    def start_learning_loops(self):
-        """Start background loops. Must be called within an async context."""
-        # V2: Will start Twin B (Observer) loop here
+    async def start_background_tasks(self):
+        """Start background loops for agents and Twin Manager."""
+        # 1. Start Agents
+        for agent in self.agents:
+            if hasattr(agent, "start"):
+                try:
+                    await agent.start()
+                    self.logger.info(f"Started background task for agent: {agent.name}")
+                except Exception as e:
+                    self.logger.error(f"Failed to start agent {agent.name}", error=str(e))
+
+        # 2. Start Twin B (Observer) Loop (Future)
         pass
 
     def shutdown(self):
@@ -96,8 +109,12 @@ class AIOperatingSystem:
             # AgentEvolver first to ensure it catches evolver-specific intents
             AgentEvolverAgent(),
             AppLauncherAgent(agent_configs.get("app_launcher")),
+            BrowserAgent(agent_configs.get("browser")),
             MediaAgent(agent_configs.get("media")),
             HomeAutomationAgent(agent_configs.get("home_automation")),
+            LibrarianAgent(agent_configs.get("librarian")),
+            SchedulerAgent(agent_configs.get("scheduler")),
+            WatchmanAgent(agent_configs.get("watchman")),
             KnowledgeAgent(agent_configs.get("knowledge")),
             FileSystemAgent(agent_configs.get("filesystem")),
             DeveloperAgent(agent_configs.get("developer")),

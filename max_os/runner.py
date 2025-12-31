@@ -12,6 +12,7 @@ import structlog
 
 from max_os.core.orchestrator import AIOperatingSystem
 from max_os.core.senses import Senses
+from max_os.core.reflex import ReflexEngine
 
 logger = structlog.get_logger("max_os.runner")
 
@@ -19,6 +20,7 @@ class MaxOSRunner:
     def __init__(self):
         self.orchestrator = AIOperatingSystem()
         self.senses = Senses(wake_word="max")
+        self.reflex_engine = ReflexEngine()
         self.running = False
 
     async def start(self) -> None:
@@ -31,6 +33,9 @@ class MaxOSRunner:
         except Exception as e:
             logger.error("Failed to start senses (is microphone connected?)", error=str(e))
             # Continue anyway, CLI might work
+            
+        # 2. Start Agent Background Tasks (Librarian, etc.)
+        await self.orchestrator.start_background_tasks()
         
         logger.info("MaxOS V2 Online. Waiting for input...", wake_word=self.senses.wake_word)
         print(f"👂 Listening for '{self.senses.wake_word}'...")
@@ -65,6 +70,12 @@ class MaxOSRunner:
         logger.info(f"Processing {source} input: {text}")
         print(f"User ({source}): {text}")
         
+        # 1. Check Reflexes (High Priority, Local)
+        if self.reflex_engine.check_and_trigger(text):
+            print("⚡ Reflex Executed.")
+            return
+
+        # 2. Forward to Brain (Orchestrator)
         response = await self.orchestrator.handle_text(text)
         
         # Speak or Print Response

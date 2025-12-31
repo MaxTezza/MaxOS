@@ -6,6 +6,7 @@ Example: ("User", "likes", "Heavy Metal")
 
 import sqlite3
 import json
+from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 import structlog
