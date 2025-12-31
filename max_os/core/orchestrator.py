@@ -29,6 +29,8 @@ from max_os.agents import (
     ScholarAgent,
     AppStoreAgent,
     MonitorAgent,
+    HorizonAgent,
+    UIControlAgent,
 )
 from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.core.intent import Intent
@@ -41,6 +43,8 @@ from max_os.core.twin_manager import TwinManager
 from max_os.core.llm import LLMProvider
 from max_os.core.system_manager import SystemManager
 from max_os.core.user_manager import UserManager
+from max_os.agents.specialized.horizon_agent import HorizonAgent
+from max_os.agents.specialized.ui_control_agent import UIControlAgent
 from max_os.utils.config import Settings, load_settings
 
 from max_os.utils.logging import configure_logging
@@ -140,6 +144,8 @@ class AIOperatingSystem:
             ScholarAgent(self.llm),
             AppStoreAgent(self.llm),
             MonitorAgent(self.system),
+            HorizonAgent(self.settings.llm.get("google_api_key") or self.settings.multi_agent.get("google_api_key")),
+            UIControlAgent(),
             KnowledgeAgent(agent_configs.get("knowledge")),
 
             FileSystemAgent(agent_configs.get("filesystem")),

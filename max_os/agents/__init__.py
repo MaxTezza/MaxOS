@@ -21,6 +21,8 @@ from .scribe import ScribeAgent
 from .scholar import ScholarAgent
 from .app_store import AppStoreAgent
 from .specialized.monitor_agent import MonitorAgent
+from .specialized.horizon_agent import HorizonAgent
+from .specialized.ui_control_agent import UIControlAgent
 
 __all__ = [
     "BaseAgent",
@@ -45,6 +47,8 @@ __all__ = [
     "ScholarAgent",
     "AppStoreAgent",
     "MonitorAgent",
+    "HorizonAgent",
+    "UIControlAgent",
     "AgentEvolverAgent",
     "AGENT_REGISTRY",
 ]

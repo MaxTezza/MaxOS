@@ -70,6 +70,19 @@ class GeminiClient:
         response = await self._model.generate_content_async(prompt)
         return response.text
 
+    async def process_image(self, prompt: str, image: Any) -> str:
+        """Process an image and text prompt together.
+        
+        Args:
+            prompt: Text prompt
+            image: PIL.Image object or image bytes
+            
+        Returns:
+            Generated text response
+        """
+        response = await self._model.generate_content_async([prompt, image])
+        return response.text
+
     def process_sync(self, prompt: str) -> str:
         """Process a prompt synchronously.
         
