@@ -22,6 +22,12 @@ from max_os.agents import (
     SchedulerAgent,
     SystemAgent,
     WatchmanAgent,
+    MeteorologistAgent,
+    AnchorAgent,
+    BrokerAgent,
+    ScribeAgent,
+    ScholarAgent,
+    AppStoreAgent,
 )
 from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.core.intent import Intent
@@ -115,6 +121,12 @@ class AIOperatingSystem:
             LibrarianAgent(agent_configs.get("librarian")),
             SchedulerAgent(agent_configs.get("scheduler")),
             WatchmanAgent(agent_configs.get("watchman")),
+            MeteorologistAgent(agent_configs.get("llm")),
+            AnchorAgent(agent_configs.get("llm")),
+            BrokerAgent(agent_configs.get("llm")),
+            ScribeAgent(agent_configs.get("llm")),
+            ScholarAgent(agent_configs.get("llm")),
+            AppStoreAgent(agent_configs.get("llm")),
             KnowledgeAgent(agent_configs.get("knowledge")),
             FileSystemAgent(agent_configs.get("filesystem")),
             DeveloperAgent(agent_configs.get("developer")),

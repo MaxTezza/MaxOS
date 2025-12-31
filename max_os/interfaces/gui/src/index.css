@@ -1,0 +1,55 @@
+:root {
+  --bg-color: #050505;
+  --surface-color: rgba(20, 20, 30, 0.6);
+  --primary-color: #00f0ff; /* Cyan */
+  --secondary-color: #7000ff; /* Purple */
+  --text-color: #ffffff;
+  --dim-color: rgba(255, 255, 255, 0.5);
+  
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden; /* App feel */
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--surface-color);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+}
+
+.glow-text {
+  text-shadow: 0 0 10px var(--primary-color);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-color);
+  border-radius: 4px;
+}

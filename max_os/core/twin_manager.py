@@ -18,6 +18,7 @@ import structlog
 from max_os.core.llm import LLMClient
 from max_os.utils.config import Settings
 from max_os.core.knowledge.graph import GraphStore
+from max_os.core.memory.vault import Vault
 
 logger = structlog.get_logger("max_os.twin_manager")
 
@@ -38,6 +39,7 @@ class TwinManager:
         self.settings = settings
         self.llm = LLMClient(settings)
         self.knowledge_graph = GraphStore()
+        self.vault = Vault()
         
         # Initialize Twins
         self.twin_1 = TwinState(id="Twin-1", role=TwinRole.FRONTMAN)
@@ -85,8 +87,13 @@ class TwinManager:
         # Search for key terms in the user text to find relevant facts
         knowledge_context = self.knowledge_graph.get_context_string(text)
         
+        # Retrieve Memories (Vault)
+        memory_context = self.vault.get_formatted_context(text)
+        
+        combined_context = f"{knowledge_context}\n\n{memory_context}" if memory_context else knowledge_context
+        
         # 2. Build Prompt
-        system_prompt = self._build_system_prompt(self.frontman, knowledge_context)
+        system_prompt = self._build_system_prompt(self.frontman, combined_context)
         
         # 3. Call Gemini
         response = await self.llm.generate_async(
@@ -98,6 +105,9 @@ class TwinManager:
         # Update Frontman's short-term context
         self.frontman.context_history.append({"role": "user", "content": text})
         self.frontman.context_history.append({"role": "assistant", "content": response})
+        
+        # Save to Vault (Async-like or non-blocking ideally, but here sync is fine for now)
+        self.vault.add_memory(f"User: {text}\nMax: {response}")
         
         return response
 

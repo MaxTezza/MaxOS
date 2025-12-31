@@ -73,3 +73,9 @@ logging:
 telemetry:
   enabled: false
   endpoint: "https://telemetry.tezzaworks.ai"
+
+accessibility:
+  voice_speed: 1.0
+  voice_volume: 1.0
+  gui_scale: 100
+  high_contrast: false

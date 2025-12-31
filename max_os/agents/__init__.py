@@ -14,6 +14,12 @@ from .network import NetworkAgent
 from .scheduler import SchedulerAgent
 from .system import SystemAgent
 from .watchman import WatchmanAgent
+from .meteorologist import MeteorologistAgent
+from .anchor import AnchorAgent
+from .broker import BrokerAgent
+from .scribe import ScribeAgent
+from .scholar import ScholarAgent
+from .app_store import AppStoreAgent
 
 __all__ = [
     "BaseAgent",
@@ -31,6 +37,12 @@ __all__ = [
     "SchedulerAgent",
     "SystemAgent",
     "WatchmanAgent",
+    "MeteorologistAgent",
+    "AnchorAgent",
+    "BrokerAgent",
+    "ScribeAgent",
+    "ScholarAgent",
+    "AppStoreAgent",
     "AgentEvolverAgent",
     "AGENT_REGISTRY",
 ]
