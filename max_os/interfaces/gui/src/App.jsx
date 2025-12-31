@@ -4,13 +4,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
 // Component: Pulse Visualizer (Twin Soul)
-const TwinVisualizer = ({ active }) => {
+const TwinVisualizer = ({ active, processing }) => {
   return (
     <div className="relative flex items-center justify-center w-64 h-64">
       {/* Core */}
       <motion.div
-        animate={{ scale: active ? [1, 1.2, 1] : 1 }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          scale: active ? (processing ? [1, 1.4, 1] : [1, 1.1, 1]) : 1,
+          opacity: processing ? [0.4, 0.8, 0.4] : 0.5
+        }}
+        transition={{
+          duration: processing ? 0.6 : 3,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
         className="w-32 h-32 rounded-full bg-cyan-500 blur-xl opacity-50 absolute"
       />
       <div className="w-24 h-24 rounded-full bg-black border-2 border-cyan-400 z-10 flex items-center justify-center glass-panel">
@@ -36,7 +43,9 @@ function App() {
   const [socket, setSocket] = useState(null);
   const [transcript, setTranscript] = useState([]);
   const [status, setStatus] = useState("Offline");
+
   const [twinState, setTwinState] = useState("Frontman");
+  const [processing, setProcessing] = useState(false);
 
   // Accessibility State
   const [settings, setSettings] = useState({
@@ -74,6 +83,11 @@ function App() {
   const handleMessage = (msg) => {
     if (msg.type === "transcript") {
       setTranscript(prev => [...prev.slice(-10), msg.payload]); // Keep last 10
+      if (msg.payload.role === 'assistant') {
+        setProcessing(false);
+      } else if (msg.payload.role === 'user') {
+        setProcessing(true);
+      }
     } else if (msg.type === "twin_state") {
       setTwinState(msg.payload);
     } else if (msg.type === "settings_update") {
@@ -127,29 +141,69 @@ function App() {
           </div>
         </div>
 
-        {/* Center: The Twin */}
+
+        {/* Center: The Twin soul */}
         <div className="flex flex-col items-center gap-6">
-          <TwinVisualizer active={status === "Connected"} />
+          <TwinVisualizer active={status === "Connected"} processing={processing} />
           <span className="text-2xl font-light tracking-[0.2em] uppercase glow-text">
             {twinState}
           </span>
         </div>
 
-        {/* Right Panel: Transcript */}
-        <div className="glass-panel w-80 h-96 p-4 flex flex-col gap-2 overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-2 mb-2">
-            <Mic size={16} />
-            <span className="text-xs uppercase opacity-70">Neural Log</span>
+
+        {/* Right Panel: Transcript & Chat */}
+        <div className="glass-panel w-96 h-[32rem] p-4 flex flex-col gap-2 overflow-hidden shadow-2xl border-cyan-500/20">
+          <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Mic size={16} className="text-cyan-400" />
+              <span className="text-xs uppercase tracking-widest opacity-70">Neural Link</span>
+            </div>
+            <span className="text-[10px] font-mono opacity-40 uppercase">Encrypted</span>
           </div>
-          <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2">
+
+          <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 custom-scrollbar">
             {transcript.map((t, i) => (
-              <div key={i} className={`text-sm ${t.role === 'user' ? 'text-right opacity-80' : 'text-left text-cyan-300'}`}>
-                <p className="p-2 rounded bg-white/5 inline-block max-w-full break-words">
+              <motion.div
+                initial={{ opacity: 0, x: t.role === 'user' ? 10 : -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                key={i}
+                className={`flex flex-col ${t.role === 'user' ? 'items-end' : 'items-start'}`}
+              >
+                <div className={`text-sm p-3 rounded-2xl max-w-[90%] break-words ${t.role === 'user'
+                  ? 'bg-cyan-600/20 border border-cyan-500/30 rounded-tr-none'
+                  : 'bg-purple-600/20 border border-purple-500/30 rounded-tl-none text-cyan-100'
+                  }`}>
                   {t.text}
-                </p>
-              </div>
+                </div>
+                <span className="text-[9px] uppercase opacity-30 mt-1 px-1">{t.source || t.role}</span>
+              </motion.div>
             ))}
             <div ref={transcriptEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <div className="mt-2 flex gap-2 items-center bg-black/40 p-1 rounded-full border border-white/5 focus-within:border-cyan-500/50 transition-all">
+            <input
+              type="text"
+              placeholder="Ask Max..."
+              className="flex-1 bg-transparent border-none outline-none px-4 py-2 text-sm placeholder:opacity-30"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const text = e.target.value;
+                  if (text.trim()) {
+                    fetch('http://localhost:8000/command', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ text })
+                    });
+                    e.target.value = '';
+                  }
+                }
+              }}
+            />
+            <button className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center hover:bg-cyan-500/40 transition-colors">
+              <Activity size={14} className="text-cyan-400" />
+            </button>
           </div>
         </div>
 
