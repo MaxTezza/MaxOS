@@ -1,12 +1,12 @@
 # Copy to config/settings.yaml and customize for your environment
 
 orchestrator:
-  provider: "anthropic"
-  model: "claude-3-5-sonnet"
+  provider: "stub"
+  model: "gemini-1.5-pro"
   temperature: 0.2
   max_output_tokens: 1024
-  fallback_model: "llama3-8b-instruct"
-  memory_backend: "redis://localhost:6379/0"
+  fallback_model: "gemini-1.5-flash"
+  memory_backend: "json_file://memory.json"
   audit_log_path: "/var/lib/maxos/audit.log"
 
 agents:
@@ -42,9 +42,7 @@ agents:
       - "eth0"
 
 llm:
-  anthropic_api_key: "set-me"
-  openai_api_key: "optional"
-  google_api_key: "optional"  # For multi-agent system with Gemini
+  google_api_key: "set-me"
   local_model_path: "/opt/models/llama3-8b.gguf"
   # LLM-powered intent classification settings (uses orchestrator.provider and orchestrator.model)
   fallback_to_rules: true         # Fall back to keyword matching if LLM fails
@@ -54,7 +52,7 @@ llm:
 
 # Multi-agent orchestration system
 multi_agent:
-  enabled: false  # Enable to use multi-agent system
+  enabled: true   # Enable multi-agent (now uses Gemini)
   google_api_key: "set-me"  # Or use GOOGLE_API_KEY env var
   max_debate_rounds: 3
   consensus_threshold: 0.8
@@ -75,7 +73,3 @@ logging:
 telemetry:
   enabled: false
   endpoint: "https://telemetry.tezzaworks.ai"
-  # Google Analytics configuration (optional)
-  google_analytics:
-    measurement_id: "G-XXXXXXXXXX"  # Your GA4 Measurement ID
-    api_secret: "your-api-secret"   # Your Measurement Protocol API Secret

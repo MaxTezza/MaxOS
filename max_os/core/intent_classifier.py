@@ -43,10 +43,8 @@ class IntentClassifier:
             return False
         
         # Check if we have API keys
-        if provider == "anthropic":
-            return self.llm_client._has_anthropic()
-        elif provider == "openai":
-            return self.llm_client._has_openai()
+        if provider == "google":
+            return self.llm_client._has_google()
         
         return False
 

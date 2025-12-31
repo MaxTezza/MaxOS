@@ -157,34 +157,28 @@ async def async_main() -> None:
 
     # Handle personality inspection commands
     if args.show_personality:
-        if orchestrator.enable_learning:
-            personality = orchestrator.personality.export_personality()
-            print("=== User Personality Model ===")
-            print("\nCommunication Style:")
-            for key, value in personality["communication_style"].items():
-                print(f"  {key}: {value:.2f}")
-            print("\nSkill Levels:")
-            for domain, level in personality["skill_levels"].items():
-                print(f"  {domain}: {level:.2f}")
-            print(
-                f"\nRecent Interactions: {len(orchestrator.personality.get_recent_interactions())}"
-            )
-            return
+        twin = orchestrator.twin_manager.frontman
+        print(f"=== Twin Profile: {twin.id} ({twin.role.value}) ===")
+        print(f"\nPersonality Embedding (Learned Traits):")
+        if twin.personality_embedding:
+            print(json.dumps(twin.personality_embedding, indent=2))
         else:
-            print("Learning system is disabled")
-            return
+            print("  (No unique personality traits learned yet)")
+            
+        print(f"\nContext History Depth: {len(twin.context_history)}")
+        return
 
     if args.export_personality:
-        if orchestrator.enable_learning:
-            import json
-
-            personality = orchestrator.personality.export_personality()
-            args.export_personality.write_text(json.dumps(personality, indent=2))
-            print(f"Personality exported to {args.export_personality}")
-            return
-        else:
-            print("Learning system is disabled")
-            return
+        twin = orchestrator.twin_manager.frontman
+        export_data = {
+            "id": twin.id,
+            "role": twin.role.value,
+            "embedding": twin.personality_embedding,
+            "history_count": len(twin.context_history)
+        }
+        args.export_personality.write_text(json.dumps(export_data, indent=2))
+        print(f"Twin profile exported to {args.export_personality}")
+        return
 
     if not args.command:
         parser.error("Provide a command, e.g. 'scan Downloads for PSD files'.")
@@ -216,12 +210,12 @@ async def async_main() -> None:
             print("No context signals captured for this interaction.")
 
     if args.show_learning_metrics:
-        metrics = orchestrator.get_learning_metrics()
-        print("\nLearning Metrics:")
-        if metrics:
-            print(format_payload(metrics))
-        else:
-            print("No learning batches processed yet.")
+        # V2: Show Twin Manager stats
+        print("\nTwin Manager Metrics:")
+        print(f"  Swaps Performed: {orchestrator.twin_manager.swaps_performed}")
+        print(f"  Last Swap: {orchestrator.twin_manager.last_swap_time}")
+        print(f"  Current Frontman: {orchestrator.twin_manager.frontman.id}")
+        print(f"  Current Observer: {orchestrator.twin_manager.observer.id}")
 
     if args.dump_memory:
         orchestrator.memory.dump(args.dump_memory)

@@ -10,9 +10,12 @@ import structlog
 from max_os.agents import (
     AGENT_REGISTRY,
     AgentEvolverAgent,
+    AppLauncherAgent,
     DeveloperAgent,
     FileSystemAgent,
+    HomeAutomationAgent,
     KnowledgeAgent,
+    MediaAgent,
     NetworkAgent,
     SystemAgent,
 )
@@ -22,10 +25,8 @@ from max_os.core.intent_classifier import IntentClassifier
 from max_os.core.memory import ConversationMemory
 from max_os.core.planner import IntentPlanner
 from max_os.learning.context_engine import ContextAwarenessEngine
-from max_os.learning.personality import Interaction, UserPersonalityModel
-from max_os.learning.prediction import PredictiveAgentSpawner
-from max_os.learning.prompt_filter import PromptOptimizationFilter
-from max_os.learning.realtime_engine import RealTimeLearningEngine
+# Removed legacy personality/learning imports
+from max_os.core.twin_manager import TwinManager
 from max_os.utils.config import Settings, load_settings
 from max_os.utils.logging import configure_logging
 
@@ -37,20 +38,23 @@ class AIOperatingSystem:
         self,
         settings: Settings | None = None,
         agents: list[BaseAgent] | None = None,
-        enable_learning: bool = True,
         auto_start_loops: bool = False,
     ) -> None:
         self.settings = settings or load_settings()
         configure_logging(self.settings)
         self.logger = structlog.get_logger("max_os.orchestrator")
+        
+        # V2: Initialize Twin Manager
+        self.twin_manager = TwinManager(self.settings)
+        
         self.planner = IntentPlanner()
-        self.intent_classifier = IntentClassifier(self.planner, self.settings)  # Pass settings
+        self.intent_classifier = IntentClassifier(self.planner, self.settings)
         self.agents: list[BaseAgent] = agents or self._init_agents()
         self.memory = ConversationMemory(limit=50, settings=self.settings)
         self.last_context: dict[str, object] | None = None
         self._learning_tasks = []
 
-        # Multi-agent orchestrator (optional)
+        # Multi-agent orchestrator (Google Gemini)
         self.multi_agent = None
         if self.settings.multi_agent.get("enabled", False):
             try:
@@ -64,65 +68,36 @@ class AIOperatingSystem:
                     "consensus_threshold": self.settings.multi_agent.get("consensus_threshold", 0.8),
                 }
                 self.multi_agent = MultiAgentOrchestrator(ma_config)
-                self.logger.info("Multi-agent orchestrator enabled")
+                self.logger.info("Multi-agent orchestrator enabled (Gemini)")
             except Exception as e:
                 self.logger.warning("Failed to initialize multi-agent orchestrator", error=str(e))
 
-        # Learning system
-        self.enable_learning = enable_learning
-        if self.enable_learning:
-            self.personality = UserPersonalityModel()
-            self.prompt_filter = PromptOptimizationFilter(self.personality)
-            self.context_engine = ContextAwarenessEngine()
-            self.prediction_spawner = PredictiveAgentSpawner(
-                self.personality,
-                self.context_engine,
-                planner=self.planner,
-                registry=AGENT_REGISTRY,
-            )
-            # Find the AgentEvolverAgent instance
-            agent_evolver = next(
-                (agent for agent in self.agents if isinstance(agent, AgentEvolverAgent)), None
-            )
-            self.realtime_learning_engine = RealTimeLearningEngine(self.personality, agent_evolver)
-            if auto_start_loops:
-                self.start_learning_loops()
-            self.logger.info(
-                "Learning system enabled",
-                extra={
-                    "verbosity": self.personality.verbosity_preference,
-                    "technical_level": self.personality.technical_level,
-                },
-            )
-        else:
-            self.context_engine = None
-            self.prediction_spawner = None
-            self.realtime_learning_engine = None
+        # Context Engine (Retained for V2 context awareness)
+        self.context_engine = ContextAwarenessEngine()
+        
+        # Removed legacy personality/prediction engines
+        self.personality = None
+        self.prompt_filter = None
+        self.prediction_spawner = None
+        self.realtime_learning_engine = None
 
     def start_learning_loops(self):
-        """Start background learning loops. Must be called within an async context."""
-        try:
-            if self.prediction_spawner:
-                task = asyncio.create_task(self.prediction_spawner.continuous_prediction_loop())
-                self._learning_tasks.append(task)
-            if self.realtime_learning_engine:
-                task = asyncio.create_task(self.realtime_learning_engine.run())
-                self._learning_tasks.append(task)
-        except RuntimeError:
-            # No event loop running, tasks will need to be started manually
-            self.logger.debug("No event loop running, learning loops not started")
+        """Start background loops. Must be called within an async context."""
+        # V2: Will start Twin B (Observer) loop here
+        pass
 
     def shutdown(self):
         if self.context_engine:
             self.context_engine.shutdown()
-        # The asyncio tasks for the learning loops will be cancelled
-        # when the main event loop is closed.
 
     def _init_agents(self) -> list[BaseAgent]:
         agent_configs = self.settings.agents
         agents = [
             # AgentEvolver first to ensure it catches evolver-specific intents
             AgentEvolverAgent(),
+            AppLauncherAgent(agent_configs.get("app_launcher")),
+            MediaAgent(agent_configs.get("media")),
+            HomeAutomationAgent(agent_configs.get("home_automation")),
             KnowledgeAgent(agent_configs.get("knowledge")),
             FileSystemAgent(agent_configs.get("filesystem")),
             DeveloperAgent(agent_configs.get("developer")),
@@ -141,139 +116,63 @@ class AIOperatingSystem:
         self, text: str, context: dict[str, object] | None = None
     ) -> AgentResponse:
         context = context or {}
-        active_window = None  # Initialize active_window
-        if self.enable_learning and self.context_engine and "signals" not in context:
-            context["signals"] = await self._gather_context_signals()
-            git_state = context["signals"].get("git", {})
-            if git_state.get("dirty_count"):
-                context.setdefault("git_status", "modified")
-            else:
-                context.setdefault("git_status", "clean")
-            active_window = context["signals"].get("applications", {}).get("active_window")
-            if active_window:
-                context.setdefault("active_window", active_window)
-
-        # Check if we should route to multi-agent system
-        if (
-            self.multi_agent
-            and self.settings.multi_agent.get("route_complex_queries", True)
-            and self._is_complex_query(text)
-        ):
-            try:
-                result = await self.multi_agent.process_with_debate(
-                    user_query=text, context=context, show_work=True
-                )
-                
-                # Convert to AgentResponse
-                response = AgentResponse(
-                    agent="multi_agent",
-                    status="success",
-                    message=result.final_answer,
-                    payload={
-                        "agents_used": result.agents_used,
-                        "confidence": result.confidence,
-                        "work_logs": result.agent_work_logs,
-                        "debate_log": result.debate_log,
-                        "manager_review": result.manager_review,
-                    },
-                )
-                
-                self.memory.add_user(text)
-                self.memory.add_agent(response)
-                return response
-                
-            except Exception as e:
-                self.logger.warning("Multi-agent processing failed, falling back", error=str(e))
-                # Fall through to normal processing
-
-        self.memory.add_user(text)
+        
+        # V2: Twin Manager handles the interaction
+        # The Twin (Frontman) decides what to say/do.
+        # For now, we still use the Intent Planner for *actions*, 
+        # but the Twin provides the *voice/personality*.
+        
+        # 1. Plan Intent (Action)
         intent = await self._plan_intent(text, context)
-        self.last_context = context
-        self.logger.info(
-            "Planned intent", extra={"intent": intent.name, "slots": intent.to_context()}
-        )
+        self.logger.info("Planned intent", extra={"intent": intent.name})
 
-        if self.enable_learning and self.prediction_spawner:
-            self.prediction_spawner.record_user_intent(intent.name)
-
-        # Add last action to context for pattern detection
-        recent_history = self.memory.history[-2:] if len(self.memory.history) >= 2 else []
-        if recent_history and recent_history[0].role == "user":
-            context["last_action"] = recent_history[0].content
-
+        # 2. Execute Action (via Agents)
         request = AgentRequest(intent=intent.name, text=text, context=context)
-
+        agent_response = None
+        
         for agent in self.agents:
             if agent.can_handle(request):
-                response = await agent.handle(request)
-                if response.payload is None:
-                    response.payload = {}
-                response.payload.setdefault("intent", intent.name)
-                response.payload.setdefault("slots", intent.to_context())
-                response.payload.setdefault("summary", intent.summary)
+                agent_response = await agent.handle(request)
+                break
+        
+        if not agent_response:
+             agent_response = AgentResponse(
+                agent="orchestrator",
+                status="unhandled",
+                message="I'm not sure how to help with that yet.",
+                payload={}
+            )
 
-                # Apply learning and optimization
-                if self.enable_learning:
-                    response = self._apply_learning(text, response, context, agent.name)
-
-                self.memory.add_agent(response)
-                self.logger.info(
-                    "Agent handled request",
-                    extra={
-                        "agent": response.agent,
-                        "status": response.status,
-                        "intent": intent.name,
-                    },
-                )
-                return response
-
-        fallback = AgentResponse(
-            agent="orchestrator",
-            status="unhandled",
-            message="No registered agent accepted this request.",
-            payload={"intent": intent.name, "text": text, "summary": intent.summary},
+        # 3. Twin Interaction (Voice/Personality Layer)
+        # The Twin validates the action or explains it to the user
+        twin_response_text = await self.twin_manager.process_user_request(
+            text, 
+            {
+                **context, 
+                "intent": intent.name, 
+                "agent_outcome": agent_response.message
+            }
         )
+        
+        # Override the technical agent message with the Twin's personality-infused message
+        agent_response.message = twin_response_text
+        
+        self.memory.add_user(text)
+        self.memory.add_agent(agent_response)
+        
+        return agent_response
 
-        if self.enable_learning:
-            fallback = self._apply_learning(text, fallback, context, "orchestrator")
-
-        return fallback
-
-    def _apply_learning(
-        self, user_input: str, response: AgentResponse, context: dict, agent_name: str
-    ) -> AgentResponse:
-        """Apply personality learning and response optimization."""
-        # Estimate technical complexity
-        domain = context.get("domain", "general")
-        technical_complexity = self.prompt_filter.estimate_technical_complexity(
-            response.message, domain
-        )
-
-        # Record interaction for learning
-        interaction = Interaction(
-            timestamp=datetime.now(),
-            user_input=user_input,
-            agent=agent_name,
-            response_length=len(response.message),
-            technical_complexity=technical_complexity,
-            success=(response.status == "success"),
-            context={"domain": domain},
-            user_reaction=None,  # Will be updated based on future interactions
-        )
-
-        # Learn from interaction
-        if self.realtime_learning_engine:
-            self.realtime_learning_engine.observe_interaction(interaction)
-
-        # Optimize response
-        optimized = self.prompt_filter.optimize_response(response, context)
-
-        # Add predictive suggestions if available
-        predictions = self.personality.predict_next_need(context)
-        if predictions:
-            optimized = self.prompt_filter.add_predictive_suggestions(optimized, predictions)
-
-        return optimized
+    async def check_for_proactive_events(self, context: dict[str, object] | None = None) -> str | None:
+        """
+        Called periodically by the main loop.
+        Asks the Twin Manager if it wants to say something proactively.
+        """
+        context = context or {}
+        suggestion = await self.twin_manager.anticipate_needs(context)
+        if suggestion:
+            self.logger.info("Proactive suggestion triggered", suggestion=suggestion)
+            return suggestion
+        return None
 
     async def _plan_intent(self, text: str, context: dict[str, object]) -> Intent:
         return await self.intent_classifier.classify(text, context)
@@ -282,8 +181,6 @@ class AIOperatingSystem:
         return self.last_context or {}
 
     def get_learning_metrics(self) -> list[dict[str, float]]:
-        if self.realtime_learning_engine:
-            return self.realtime_learning_engine.get_recent_metrics()
         return []
 
     async def _gather_context_signals(self) -> dict[str, object]:
@@ -300,27 +197,11 @@ class AIOperatingSystem:
             return {}
 
     def _is_complex_query(self, text: str) -> bool:
-        """Determine if query needs multi-agent processing.
-        
-        Args:
-            text: User query
-            
-        Returns:
-            True if query is complex
-        """
+        """Determine if query needs multi-agent processing."""
         complex_keywords = [
-            "plan",
-            "analyze",
-            "compare",
-            "research",
-            "should i",
-            "what if",
-            "help me decide",
-            "evaluate",
-            "assessment",
-            "recommendation",
-            "strategy",
-            "proposal",
+            "plan", "analyze", "compare", "research", "should i",
+            "what if", "help me decide", "evaluate", "assessment",
+            "recommendation", "strategy", "proposal",
         ]
         text_lower = text.lower()
         return any(kw in text_lower for kw in complex_keywords)
