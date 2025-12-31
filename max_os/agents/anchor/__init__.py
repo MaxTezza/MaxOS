@@ -1,48 +1,45 @@
-from max_os.core.agent import BaseAgent
+from max_os.agents.base import AgentRequest, AgentResponse
 from max_os.core.llm import LLMProvider
 import feedparser
 import structlog
-from typing import Optional
 
 logger = structlog.get_logger("max_os.agents.anchor")
 
-class AnchorAgent(BaseAgent):
+class AnchorAgent:
+    name = "Anchor"
+    description = "Delivers news briefings from RSS feeds."
+
     def __init__(self, llm: LLMProvider):
-        super().__init__(llm)
-        self.name = "Anchor"
-        self.description = "Delivers news briefings from RSS feeds."
-        # Default reputable sources
+        self.llm = llm
         self.feeds = {
             "tech": "http://feeds.feedburner.com/TechCrunch/",
             "world": "http://feeds.bbci.co.uk/news/world/rss.xml",
             "science": "https://www.sciencedaily.com/rss/top/science.xml"
         }
 
-    def can_handle(self, user_input: str) -> bool:
+    def can_handle(self, request: AgentRequest) -> bool:
         keywords = ["news", "headlines", "briefing", "what's happening", "world", "tech"]
-        return any(k in user_input.lower() for k in keywords)
+        return any(k in request.text.lower() for k in keywords)
 
-    async def execute(self, user_input: str, context: Optional[str] = None) -> str:
-        logger.info(f"Processing news request: {user_input}")
+    async def handle(self, request: AgentRequest) -> AgentResponse:
+        logger.info(f"Processing news request: {request.text}")
         
-        # Determine category
         category = "world"
-        if "tech" in user_input.lower(): category = "tech"
-        if "science" in user_input.lower(): category = "science"
+        if "tech" in request.text.lower(): category = "tech"
+        if "science" in request.text.lower(): category = "science"
         
         url = self.feeds.get(category, self.feeds["world"])
         
         try:
             feed = feedparser.parse(url)
-            # Get top 3 headlines
             headlines = [entry.title for entry in feed.entries[:3]]
-            
             summary = "\n".join(f"- {h}" for h in headlines)
             
-            return await self.llm.generate(
+            message = await self.llm.generate_async(
                 system_prompt=f"You are a news anchor. Summarize these headlines briefly and professionally:\n{summary}",
-                user_prompt=user_input
+                user_prompt=request.text
             )
+            return AgentResponse(agent=self.name, status="success", message=message)
         except Exception as e:
             logger.error("News fetch failed", error=str(e))
-            return "The teletype is down. I can't reach the news wire."
+            return AgentResponse(agent=self.name, status="error", message="The teletype is down. I can't reach the news wire.")

@@ -16,11 +16,13 @@ logger = structlog.get_logger("max_os.agents.scheduler")
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-class SchedulerAgent(BaseAgent):
+class SchedulerAgent:
+    name = "scheduler"
+    description = "Manages calendar and time."
+    capabilities = ["list_events", "create_event"]
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(config)
-        self.name = "scheduler"
-        self.description = "Manages calendar and time."
+        self.config = config or {}
         self.service = None
         # In a real implementation, we would handle OAuth flow here.
         # For this prototype, we assume credentials might exist or we mock it.

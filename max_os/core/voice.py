@@ -13,11 +13,26 @@ from max_os.utils.config import load_settings
 
 logger = structlog.get_logger("max_os.core.voice")
 
+
 class VoiceEngine:
     def __init__(self):
         self.settings = load_settings()
+        self.enabled = False
+        
+        api_key = self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY")
+        
         try:
-            self.client = texttospeech.TextToSpeechClient()
+            if api_key:
+                # Use API Key for TTS if provided
+                from google.api_core import client_options
+                options = client_options.ClientOptions(api_key=api_key)
+                self.client = texttospeech.TextToSpeechClient(client_options=options)
+                logger.info("Voice Engine Online (Using API Key)")
+            else:
+                # Fallback to ADC
+                self.client = texttospeech.TextToSpeechClient()
+                logger.info("Voice Engine Online (Using ADC)")
+
             self.voice = texttospeech.VoiceSelectionParams(
                 language_code="en-US",
                 name="en-US-Journey-F" # Neural Voice
@@ -25,9 +40,8 @@ class VoiceEngine:
             # Load initial settings
             self._update_config()
             self.enabled = True
-            logger.info("Voice Engine Online (Google Cloud TTS)")
         except Exception as e:
-            logger.error("Voice Engine Failed to Init", error=str(e))
+            logger.error("Voice Engine Failed to Init. Audio output will be disabled.", error=str(e))
             self.enabled = False
 
     def _update_config(self):

@@ -11,11 +11,13 @@ from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 
 logger = structlog.get_logger("max_os.agents.home_automation")
 
-class HomeAutomationAgent(BaseAgent):
+class HomeAutomationAgent:
+    name = "home_automation"
+    description = "Controls smart home devices (Lights, Thermostat, Doorbell)"
+    capabilities = ["light_control", "thermostat_control", "security_control"]
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(config)
-        self.name = "home_automation"
-        self.description = "Controls smart home devices (Lights, Thermostat, Doorbell)"
+        self.config = config or {}
         # Placeholder state for "mock" automation
         self.devices = {
             "living room lights": "off",

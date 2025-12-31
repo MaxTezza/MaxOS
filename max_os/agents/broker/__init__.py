@@ -1,44 +1,42 @@
-from max_os.core.agent import BaseAgent
+from max_os.agents.base import AgentRequest, AgentResponse
 from max_os.core.llm import LLMProvider
 import yfinance as yf
 import structlog
-from typing import Optional
+import json
 
 logger = structlog.get_logger("max_os.agents.broker")
 
-class BrokerAgent(BaseAgent):
+class BrokerAgent:
+    name = "Broker"
+    description = "Provides real-time stock and crypto market data."
+
     def __init__(self, llm: LLMProvider):
-        super().__init__(llm)
-        self.name = "Broker"
-        self.description = "Provides real-time stock and crypto market data."
+        self.llm = llm
 
-    def can_handle(self, user_input: str) -> bool:
+    def can_handle(self, request: AgentRequest) -> bool:
         keywords = ["stock", "price", "market", "bitcoin", "crypto", "share", "value", "ticker"]
-        # Basic check, can be improved with regex
-        return any(k in user_input.lower() for k in keywords)
+        return any(k in request.text.lower() for k in keywords)
 
-    async def execute(self, user_input: str, context: Optional[str] = None) -> str:
-        logger.info(f"Processing finance request: {user_input}")
+    async def handle(self, request: AgentRequest) -> AgentResponse:
+        logger.info(f"Processing finance request: {request.text}")
         
-        # 1. Extract ticker using LLM (simple extraction)
-        ticker_prompt = f"Extract the stock/crypto ticker symbol from this text. Return ONLY the symbol (e.g. AAPL, BTC-USD). If none, return INVALID.\nText: {user_input}"
-        ticker = await self.llm.generate(system_prompt="You are a financial data extractor.", user_prompt=ticker_prompt)
+        ticker_prompt = f"Extract the stock/crypto ticker symbol from this text. Return ONLY the symbol (e.g. AAPL, BTC-USD). If none, return INVALID.\nText: {request.text}"
+        ticker = await self.llm.generate_async(system_prompt="You are a financial data extractor.", user_prompt=ticker_prompt)
         ticker = ticker.strip().upper()
         
         if ticker == "INVALID":
-            return "I couldn't identify the ticker symbol. Which stock or crypto?"
+            return AgentResponse(agent=self.name, status="error", message="I couldn't identify the ticker symbol. Which stock or crypto?")
 
         try:
-            # 2. Get Data
             stock = yf.Ticker(ticker)
             info = stock.fast_info
-            
-            # fast_info might miss some fields depending on asset type
             price = info.last_price if hasattr(info, 'last_price') else "Unknown"
             
-            # 3. Format Response
-            return f"The current price of {ticker} is ${price:,.2f}."
-            
+            return AgentResponse(
+                agent=self.name, 
+                status="success", 
+                message=f"The current price of {ticker} is ${price:,.2f}."
+            )
         except Exception as e:
             logger.error("Finance check failed", error=str(e))
-            return f"I couldn't retrieve data for {ticker}. The market might be closed or the symbol is wrong."
+            return AgentResponse(agent=self.name, status="error", message=f"I couldn't retrieve data for {ticker}.")

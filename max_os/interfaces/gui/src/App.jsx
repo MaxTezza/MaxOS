@@ -87,14 +87,15 @@ function App() {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col p-8 gap-6 transition-all duration-300" style={containerStyle}>
+    <div className="w-screen h-screen flex flex-col p-8 gap-6 transition-all duration-300 app-container" style={containerStyle}>
 
       {/* Top Bar */}
       <header className="flex justify-between items-center glass-panel p-4 h-16 w-full max-w-5xl mx-auto">
         <div className="flex items-center gap-4">
           <Activity size={20} className={status === "Connected" ? "text-green-400" : "text-red-500"} />
-          <span className="font-mono text-sm tracking-widest uppercase">MaxOS V2.5 // {status}</span>
+          <span className="font-mono text-sm tracking-widest uppercase">MaxOS V2.6 // {status}</span>
         </div>
+
         <div className="flex items-center gap-4">
           <Sun size={16} />
           <input

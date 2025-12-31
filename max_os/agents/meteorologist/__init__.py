@@ -1,41 +1,36 @@
-from max_os.core.agent import BaseAgent
+from max_os.agents.base import AgentRequest, AgentResponse
 from max_os.core.llm import LLMProvider
 import requests
 import structlog
-from typing import Optional
 
 logger = structlog.get_logger("max_os.agents.meteorologist")
 
-class MeteorologistAgent(BaseAgent):
+class MeteorologistAgent:
+    name = "Meteorologist"
+    description = "Manages weather forecasts and environmental queries using wttr.in."
+
     def __init__(self, llm: LLMProvider):
-        super().__init__(llm)
-        self.name = "Meteorologist"
-        self.description = "Manages weather forecasts and environmental queries using wttr.in."
+        self.llm = llm
 
-    def can_handle(self, user_input: str) -> bool:
+    def can_handle(self, request: AgentRequest) -> bool:
         keywords = ["weather", "forecast", "rain", "temperature", "umbrella", "sun", "hot", "cold", "outside"]
-        return any(k in user_input.lower() for k in keywords)
+        return any(k in request.text.lower() for k in keywords)
 
-    async def execute(self, user_input: str, context: Optional[str] = None) -> str:
-        logger.info(f"Processing weather request: {user_input}")
-        
-        # 1. Detect location (naive approach, future: use spacy or LLM)
-        # Defaults to auto-detect by IP
+    async def handle(self, request: AgentRequest) -> AgentResponse:
+        logger.info(f"Processing weather request: {request.text}")
         
         try:
-            # 2. Call wttr.in (format j1 for JSON)
-            # We will ask for current condition
             response = requests.get("https://wttr.in/?format=3")
             if response.status_code == 200:
                 weather_data = response.text.strip()
                 
-                # 3. Interpret using LLM for personality
-                return await self.llm.generate(
+                message = await self.llm.generate_async(
                     system_prompt=f"You are a helpful weather reporter. The current condition is: {weather_data}. Answer the user's specific question naturally.",
-                    user_prompt=user_input
+                    user_prompt=request.text
                 )
+                return AgentResponse(agent=self.name, status="success", message=message)
             else:
-                return "I'm having trouble connecting to the weather satellite."
+                return AgentResponse(agent=self.name, status="error", message="I'm having trouble connecting to the weather satellite.")
         except Exception as e:
             logger.error("Weather check failed", error=str(e))
-            return "I couldn't check the weather. Look out the window?"
+            return AgentResponse(agent=self.name, status="error", message="I couldn't check the weather. Look out the window?")

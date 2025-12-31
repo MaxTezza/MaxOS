@@ -15,11 +15,13 @@ from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 
 logger = structlog.get_logger("max_os.agents.media")
 
-class MediaAgent(BaseAgent):
+class MediaAgent:
+    name = "media"
+    description = "Controls media playback (volume, play/pause, next) and music"
+    capabilities = ["volume_control", "playback_control"]
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(config)
-        self.name = "media"
-        self.description = "Controls media playback (volume, play/pause, next) and music"
+        self.config = config or {}
         
         # Check for playerctl
         self.has_playerctl = shutil.which("playerctl") is not None

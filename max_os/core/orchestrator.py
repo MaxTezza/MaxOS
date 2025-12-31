@@ -37,7 +37,9 @@ from max_os.core.planner import IntentPlanner
 from max_os.learning.context_engine import ContextAwarenessEngine
 # Removed legacy personality/learning imports
 from max_os.core.twin_manager import TwinManager
+from max_os.core.llm import LLMProvider
 from max_os.utils.config import Settings, load_settings
+
 from max_os.utils.logging import configure_logging
 
 
@@ -55,7 +57,9 @@ class AIOperatingSystem:
         self.logger = structlog.get_logger("max_os.orchestrator")
         
         # V2: Initialize Twin Manager
+        self.llm = LLMProvider(self.settings)
         self.twin_manager = TwinManager(self.settings)
+
         
         self.planner = IntentPlanner()
         self.intent_classifier = IntentClassifier(self.planner, self.settings)
@@ -121,13 +125,14 @@ class AIOperatingSystem:
             LibrarianAgent(agent_configs.get("librarian")),
             SchedulerAgent(agent_configs.get("scheduler")),
             WatchmanAgent(agent_configs.get("watchman")),
-            MeteorologistAgent(agent_configs.get("llm")),
-            AnchorAgent(agent_configs.get("llm")),
-            BrokerAgent(agent_configs.get("llm")),
-            ScribeAgent(agent_configs.get("llm")),
-            ScholarAgent(agent_configs.get("llm")),
-            AppStoreAgent(agent_configs.get("llm")),
+            MeteorologistAgent(self.llm),
+            AnchorAgent(self.llm),
+            BrokerAgent(self.llm),
+            ScribeAgent(self.llm),
+            ScholarAgent(self.llm),
+            AppStoreAgent(self.llm),
             KnowledgeAgent(agent_configs.get("knowledge")),
+
             FileSystemAgent(agent_configs.get("filesystem")),
             DeveloperAgent(agent_configs.get("developer")),
             NetworkAgent(agent_configs.get("network")),

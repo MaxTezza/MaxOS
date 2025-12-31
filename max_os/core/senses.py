@@ -120,6 +120,7 @@ class Senses:
                 _, buffer = cv2.imencode('.jpg', frame)
                 jpg_as_text = base64.b64encode(buffer).decode('utf-8')
                 
+
                 # Update queue (drop old if full)
                 if self.vision_queue.full():
                     try:
@@ -129,7 +130,12 @@ class Senses:
                 self.vision_queue.put(jpg_as_text)
                 
                 # rate limit
-                cv2.waitKey(100) 
+                try:
+                    cv2.waitKey(100) 
+                except Exception:
+                    # Headless or missing GUI support
+                    import time
+                    time.sleep(0.1)
                 
         except Exception as e:
             logger.error(f"Vision error: {e}")

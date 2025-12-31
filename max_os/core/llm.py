@@ -13,12 +13,15 @@ except Exception:  # pragma: no cover - optional dependency
     genai = None  # type: ignore
 
 
+
 class LLMClient:
     """Thin wrapper that abstracts provider differences."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.provider = settings.orchestrator.get("provider", "stub")
+        # Default to 'google' if key is present, otherwise fallback to settings/stub
+        self.has_key = self._has_google()
+        self.provider = "google" if self.has_key else settings.orchestrator.get("provider", "stub")
         self.model = settings.orchestrator.get("model", "gemini-1.5-pro")
         self.max_tokens = settings.llm.get("max_tokens", 500)
         self.temperature = settings.llm.get("temperature", 0.1)
@@ -27,8 +30,12 @@ class LLMClient:
     def generate(self, system_prompt: str, user_prompt: str, max_tokens: int | None = None) -> str:
         """Generate LLM response synchronously (deprecated, use generate_async)."""
         max_tokens = max_tokens or self.max_tokens
-        if self.provider == "google" and self._has_google():
-            return self._run_google(system_prompt, user_prompt, max_tokens)
+        if self.provider == "google" and self.has_key:
+            try:
+                return self._run_google(system_prompt, user_prompt, max_tokens)
+            except Exception as e:
+                logger.error("Google Gemini generation failed", error=str(e))
+                return f"Error: {str(e)}"
         return self._stub_completion(system_prompt, user_prompt)
     
     async def generate_async(
@@ -51,6 +58,25 @@ class LLMClient:
             )
         except asyncio.TimeoutError as e:
             raise asyncio.TimeoutError(f"LLM request timed out after {timeout}s") from e
+
+    def get_embeddings(self, text: str) -> list[float]:
+        """Generate embeddings using Google Gemini."""
+        if not self.has_key or genai is None:
+            # Fallback to zeros (not ideal, but prevents crash in stub mode)
+            return [0.0] * 768
+
+        try:
+            api_key = self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY")
+            genai.configure(api_key=api_key)
+            result = genai.embed_content(
+                model="models/text-embedding-004",
+                content=text,
+                task_type="retrieval_document"
+            )
+            return result['embedding']
+        except Exception as e:
+            logger.error("Failed to generate embeddings", error=str(e))
+            return [0.0] * 768
 
     def _has_google(self) -> bool:
         return bool(self.settings.llm.get("google_api_key") or os.environ.get("GOOGLE_API_KEY"))
@@ -78,3 +104,5 @@ class LLMClient:
 
     def _stub_completion(self, system_prompt: str, user_prompt: str) -> str:
         return f"[stub-response] {user_prompt[:120]}"
+
+LLMProvider = LLMClient

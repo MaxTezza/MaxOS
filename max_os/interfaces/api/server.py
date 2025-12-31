@@ -14,9 +14,42 @@ from max_os.utils.config import load_settings
 
 logger = structlog.get_logger("max_os.api")
 
-from max_os.utils.config import load_settings
+app = FastAPI(title="MaxOS Neural Link")
 
-# ... (Previous imports)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- WebSocket Manager ---
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+runner_ref = None
+
+def set_runner(runner):
+    global runner_ref
+    runner_ref = runner
 
 # Load global settings manager
 settings_manager = load_settings()
@@ -32,7 +65,7 @@ async def websocket_endpoint(websocket: WebSocket):
         })
         
         while True:
-            # Keep connection alive, listen for commands from GUI (optional)
+            # Keep connection alive
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_json({"type": "pong"})
@@ -62,10 +95,6 @@ async def update_setting(update: SettingsUpdate):
 
 # --- Broadcast Helper ---
 async def broadcast_state_update(state_type: str, data: Any):
-    """
-    Called by other parts of MaxOS to push updates.
-    Types: 'transcript', 'twin_state', 'agent_status', 'reflex'
-    """
     await manager.broadcast({
         "type": state_type,
         "payload": data,
@@ -78,11 +107,7 @@ class CommandRequest(BaseModel):
 
 @app.post("/command")
 async def send_command(cmd: CommandRequest):
-    """Allows the GUI to send a text command to MaxOS."""
     if runner_ref:
-        # We need to inject this into the runner's loop
-        # For simplicity, we assume the runner exposes a queue or method
-        # This is asynchronous fire-and-forget for the API response
         logger.info(f"API Command received: {cmd.text}")
         if hasattr(runner_ref, "inject_command"):
              await runner_ref.inject_command(cmd.text)

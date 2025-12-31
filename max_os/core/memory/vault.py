@@ -12,14 +12,22 @@ import time
 import os
 from datetime import datetime
 
+
+from max_os.core.llm import LLMClient
+from max_os.utils.config import load_settings
+
 logger = structlog.get_logger("max_os.core.vault")
+
+
+
 
 class Vault:
     def __init__(self, persist_path: str = "~/.maxos/vault"):
         try:
             self.client = chromadb.PersistentClient(path=os.path.expanduser(persist_path))
+            # Use default embeddings for now to ensure stability
             self.collection = self.client.get_or_create_collection(name="memories")
-            logger.info("The Vault is Open (ChromaDB)")
+            logger.info("The Vault is Open (System Default Embeddings)")
             self.enabled = True
         except Exception as e:
             logger.error("Failed to open Vault", error=str(e))
@@ -51,7 +59,7 @@ class Vault:
                 n_results=n_results
             )
             # Flatten results
-            if results['documents']:
+            if results and results.get('documents'):
                  return results['documents'][0]
             return []
         except Exception as e:

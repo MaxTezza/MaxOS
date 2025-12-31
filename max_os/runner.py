@@ -85,10 +85,14 @@ class MaxOSRunner:
         # 2. Start Agent Background Tasks (Librarian, etc.)
         await self.orchestrator.start_background_tasks()
         
+
         logger.info("MaxOS V2 Online. Waiting for input...", wake_word=self.senses.wake_word)
         print(f"👂 Listening for '{self.senses.wake_word}'...")
+        print("💬 You can also type commands here (press Enter to send).")
 
         # 2. Main Loop
+        asyncio.create_task(self._cli_loop())
+
         while self.running:
             # A. Check Voice Commands
             command = self.senses.get_next_command()
@@ -100,10 +104,7 @@ class MaxOSRunner:
             # if frame: ...
 
             # C. Check Anticipation (Proactive)
-            # Run every ~10 seconds or check elapsed time
-            # For this MVP loop, we check every iteration but limit inside logic/rate-limiting
             try:
-                # Mock context for now. In real system, we'd gather from self.orchestrator._gather_context_signals
                 context_signals = {"time": "now"} 
                 suggestion = await self.orchestrator.check_for_proactive_events(context_signals)
                 if suggestion:
@@ -113,6 +114,29 @@ class MaxOSRunner:
 
             # Sleep briefly to yield to event loop
             await asyncio.sleep(0.1)
+
+    async def _cli_loop(self):
+        """CLI listener for terminal chat."""
+        import aioconsole  # Try to use aioconsole for non-blocking input
+        cli_enabled = True
+        try:
+            while self.running and cli_enabled:
+                try:
+                    line = await aioconsole.ainput("")
+                    if line.strip():
+                        await self._handle_input(line.strip(), source="chat")
+                except EOFError:
+                    break
+        except ImportError:
+            # Fallback to threaded input if aioconsole is not available
+            logger.warning("aioconsole not found. Falling back to threaded CLI input.")
+            while self.running:
+                loop = asyncio.get_event_loop()
+                line = await loop.run_in_executor(None, input, "")
+                if line.strip():
+                    await self._handle_input(line.strip(), source="chat")
+        except Exception as e:
+            logger.error("CLI loop error", error=str(e))
 
     async def _handle_input(self, text: str, source: str = "text") -> None:
         logger.info(f"Processing {source} input: {text}")

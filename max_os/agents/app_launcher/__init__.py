@@ -12,11 +12,13 @@ from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 
 logger = structlog.get_logger("max_os.agents.app_launcher")
 
-class AppLauncherAgent(BaseAgent):
+class AppLauncherAgent:
+    name = "app_launcher"
+    description = "Launches, closes, and manages system applications"
+    capabilities = ["launch", "close", "keyboard_emulation"]
+    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(config)
-        self.name = "app_launcher"
-        self.description = "Launches, closes, and manages system applications"
+        self.config = config or {}
         # Common apps mapping for easier voice matching
         self.app_aliases = {
             "browser": "firefox",

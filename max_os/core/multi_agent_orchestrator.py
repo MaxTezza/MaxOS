@@ -75,11 +75,7 @@ class MultiAgentOrchestrator:
         # Creative uses Pro for better creative output
         creative_llm = GeminiClient(
             model="gemini-1.5-pro",
-            api_key=(
-                self.manager._model._client._api_key
-                if hasattr(self.manager._model, "_client")
-                else None
-            ),
+            api_key=config.get("google_api_key"),
             temperature=0.8,
             max_tokens=2048,
         )
