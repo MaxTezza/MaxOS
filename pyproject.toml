@@ -28,7 +28,12 @@ dependencies = [
   "watchdog>=2.3.1",
   "structlog>=24.2",
   "scikit-learn>=1.5",
-  "python-dotenv>=1.0.0"
+  "python-dotenv>=1.0.0",
+  "google-generativeai",
+  "chromadb",
+  "SpeechRecognition",
+  "aioconsole",
+  "pyaudio"
 ]
 
 [project.optional-dependencies]

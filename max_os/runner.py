@@ -52,6 +52,12 @@ class MaxOSRunner:
         """Launches the React Frontend."""
         import subprocess
         import os
+        
+        # In Docker, we might already be serving the GUI or have it pre-built
+        if os.environ.get("DOCKER_MODE") == "true":
+            logger.info("Running in Docker Mode. Assuming GUI is built and served externally or pre-built.")
+            return
+
         gui_path = "max_os/interfaces/gui"
         if os.path.exists(gui_path):
             logger.info("Launching Plasma Dashboard...")
@@ -90,8 +96,10 @@ class MaxOSRunner:
         print(f"👂 Listening for '{self.senses.wake_word}'...")
         print("💬 You can also type commands here (press Enter to send).")
 
+
         # 2. Main Loop
         asyncio.create_task(self._cli_loop())
+        asyncio.create_task(self._health_broadcaster())
 
         while self.running:
             # A. Check Voice Commands
@@ -114,6 +122,16 @@ class MaxOSRunner:
 
             # Sleep briefly to yield to event loop
             await asyncio.sleep(0.1)
+
+    async def _health_broadcaster(self):
+        """Periodically sends system health to the GUI."""
+        while self.running:
+            try:
+                health = self.orchestrator.system.get_system_health()
+                await broadcast_state_update("system_health", health)
+            except Exception as e:
+                logger.error("Health broadcast error", error=str(e))
+            await asyncio.sleep(5)
 
     async def _cli_loop(self):
         """CLI listener for terminal chat."""

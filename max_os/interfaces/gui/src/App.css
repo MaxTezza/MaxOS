@@ -110,3 +110,17 @@ input:focus {
         box-shadow: 0 0 0 0 rgba(0, 240, 255, 0);
     }
 }
+
+/* Kiosk Mode: Full System Takeover */
+.kiosk-mode {
+    padding: 0;
+    gap: 0;
+}
+
+.kiosk-mode header {
+    display: none;
+}
+
+.kiosk-mode main {
+    max-width: 100%;
+}

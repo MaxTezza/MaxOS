@@ -38,6 +38,39 @@ const TwinVisualizer = ({ active, processing }) => {
   );
 };
 
+// Component: System Health Stats
+const SystemStats = ({ data }) => {
+  if (!data) return <div className="text-[10px] opacity-30 uppercase">Initializing Telemetry...</div>;
+
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex justify-between text-[10px] uppercase tracking-tighter opacity-60">
+        <span>CPU</span>
+        <span>{data.cpu_usage}%</span>
+      </div>
+      <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${data.cpu_usage}%` }}
+          className={`h-full ${data.cpu_usage > 80 ? 'bg-red-500' : 'bg-cyan-500'}`}
+        />
+      </div>
+
+      <div className="flex justify-between text-[10px] uppercase tracking-tighter opacity-60 mt-1">
+        <span>MEM</span>
+        <span>{data.memory.percent}%</span>
+      </div>
+      <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${data.memory.percent}%` }}
+          className="h-full bg-purple-500"
+        />
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [brightness, setBrightness] = useState(100);
   const [socket, setSocket] = useState(null);
@@ -46,6 +79,8 @@ function App() {
 
   const [twinState, setTwinState] = useState("Frontman");
   const [processing, setProcessing] = useState(false);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [kioskMode, setKioskMode] = useState(false);
 
   // Accessibility State
   const [settings, setSettings] = useState({
@@ -90,6 +125,8 @@ function App() {
       }
     } else if (msg.type === "twin_state") {
       setTwinState(msg.payload);
+    } else if (msg.type === "system_health") {
+      setSystemHealth(msg.payload);
     } else if (msg.type === "settings_update") {
       setSettings(prev => ({ ...prev, ...msg.payload }));
     }
@@ -101,7 +138,7 @@ function App() {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col p-8 gap-6 transition-all duration-300 app-container" style={containerStyle}>
+    <div className={`w-screen h-screen flex flex-col p-8 gap-6 transition-all duration-300 app-container ${kioskMode ? 'kiosk-mode' : ''}`} style={containerStyle}>
 
       {/* Top Bar */}
       <header className="flex justify-between items-center glass-panel p-4 h-16 w-full max-w-5xl mx-auto">
@@ -139,6 +176,22 @@ function App() {
             <Lock size={16} className="text-cyan-400" />
             <span>Watchman</span>
           </div>
+
+          <div className="glass-panel p-4 flex flex-col gap-3 mt-4 border-cyan-500/10">
+            <div className="flex items-center gap-2 mb-1">
+              <Activity size={14} className="text-cyan-400" />
+              <span className="text-xs uppercase tracking-widest font-bold">Telemetry</span>
+            </div>
+            <SystemStats data={systemHealth} />
+          </div>
+
+          <button
+            onClick={() => setKioskMode(!kioskMode)}
+            className={`glass-panel p-4 flex items-center gap-3 transition-colors ${kioskMode ? 'bg-cyan-500/20' : 'hover:bg-white/5'}`}
+          >
+            <Lock size={16} className={kioskMode ? "text-cyan-400" : "opacity-30"} />
+            <span className="text-xs uppercase">Kiosk Mode</span>
+          </button>
         </div>
 
 

@@ -28,6 +28,7 @@ from max_os.agents import (
     ScribeAgent,
     ScholarAgent,
     AppStoreAgent,
+    MonitorAgent,
 )
 from max_os.agents.base import AgentRequest, AgentResponse, BaseAgent
 from max_os.core.intent import Intent
@@ -38,6 +39,8 @@ from max_os.learning.context_engine import ContextAwarenessEngine
 # Removed legacy personality/learning imports
 from max_os.core.twin_manager import TwinManager
 from max_os.core.llm import LLMProvider
+from max_os.core.system_manager import SystemManager
+from max_os.core.user_manager import UserManager
 from max_os.utils.config import Settings, load_settings
 
 from max_os.utils.logging import configure_logging
@@ -59,6 +62,11 @@ class AIOperatingSystem:
         # V2: Initialize Twin Manager
         self.llm = LLMProvider(self.settings)
         self.twin_manager = TwinManager(self.settings)
+
+        # V3: System & User Management
+        self.system = SystemManager()
+        self.users = UserManager()
+        self.users.login("maximus") # Default user for now
 
         
         self.planner = IntentPlanner()
@@ -131,6 +139,7 @@ class AIOperatingSystem:
             ScribeAgent(self.llm),
             ScholarAgent(self.llm),
             AppStoreAgent(self.llm),
+            MonitorAgent(self.system),
             KnowledgeAgent(agent_configs.get("knowledge")),
 
             FileSystemAgent(agent_configs.get("filesystem")),
@@ -179,10 +188,16 @@ class AIOperatingSystem:
 
         # 3. Twin Interaction (Voice/Personality Layer)
         # The Twin validates the action or explains it to the user
+        user_context = {
+            "username": self.users.get_current_user().username if self.users.get_current_user() else "unknown",
+            "system_health": self.system.get_system_health()
+        }
+        
         twin_response_text = await self.twin_manager.process_user_request(
             text, 
             {
                 **context, 
+                **user_context,
                 "intent": intent.name, 
                 "agent_outcome": agent_response.message
             }

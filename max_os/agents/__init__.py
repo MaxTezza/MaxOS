@@ -20,6 +20,7 @@ from .broker import BrokerAgent
 from .scribe import ScribeAgent
 from .scholar import ScholarAgent
 from .app_store import AppStoreAgent
+from .specialized.monitor_agent import MonitorAgent
 
 __all__ = [
     "BaseAgent",
@@ -43,6 +44,7 @@ __all__ = [
     "ScribeAgent",
     "ScholarAgent",
     "AppStoreAgent",
+    "MonitorAgent",
     "AgentEvolverAgent",
     "AGENT_REGISTRY",
 ]

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  maxos:
+    build: .
+    image: maxos:v3
+    container_name: maxos_v3
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ~/.maxos/vault:/root/.maxos/vault
+    devices:
+      - "/dev/snd:/dev/snd" # For audio output
+    privileged: true # Required for system-level access if desired
+    environment:
+      - DISPLAY=${DISPLAY}
+      - XAUTHORITY=${XAUTHORITY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/.Xauthority:/root/.Xauthority
+    restart: unless-stopped
