@@ -25,6 +25,7 @@ class Settings:
     logging: dict[str, Any] = field(default_factory=dict)
     telemetry: dict[str, Any] = field(default_factory=dict)
     multi_agent: dict[str, Any] = field(default_factory=dict)
+    api: dict[str, Any] = field(default_factory=dict)
     
     # Phase 6: Accessibility & Control
     accessibility: dict[str, Any] = field(default_factory=lambda: {

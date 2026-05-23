@@ -70,6 +70,10 @@ logging:
   json: true
   file: "logs/maxos.log"
 
+api:
+  allowed_origins:
+    - "http://localhost:3000"
+
 telemetry:
   enabled: false
   endpoint: "https://telemetry.tezzaworks.ai"

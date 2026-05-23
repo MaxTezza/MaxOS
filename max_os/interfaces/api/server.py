@@ -16,9 +16,15 @@ logger = structlog.get_logger("max_os.api")
 
 app = FastAPI(title="MaxOS Neural Link")
 
+# Load global settings manager
+settings_manager = load_settings()
+
+# Get allowed origins from settings or default to local development address
+allowed_origins = settings_manager.api.get("allowed_origins", ["http://localhost:3000"])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,9 +56,6 @@ runner_ref = None
 def set_runner(runner):
     global runner_ref
     runner_ref = runner
-
-# Load global settings manager
-settings_manager = load_settings()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
