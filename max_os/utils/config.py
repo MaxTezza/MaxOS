@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-import yaml
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
-from dotenv import load_dotenv
+
 import structlog
+import yaml
+from dotenv import load_dotenv
 
 load_dotenv()
 logger = structlog.get_logger("max_os.config")
@@ -53,7 +54,8 @@ class Settings:
         """Persists current state to YAML."""
         data = asdict(self)
         # Remove internal fields
-        if "_file_path" in data: del data["_file_path"]
+        if "_file_path" in data:
+            del data["_file_path"]
         
         try:
             with open(self._file_path, "w", encoding="utf-8") as f:

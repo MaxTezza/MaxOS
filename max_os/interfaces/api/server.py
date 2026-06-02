@@ -5,11 +5,13 @@ Serves the Frontend and providing a WebSocket stream for real-time state.
 """
 
 import asyncio
-from typing import List, Dict, Any
+from typing import Any
+
 import structlog
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
 from max_os.utils.config import load_settings
 
 logger = structlog.get_logger("max_os.api")
@@ -33,7 +35,7 @@ app.add_middleware(
 # --- WebSocket Manager ---
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
