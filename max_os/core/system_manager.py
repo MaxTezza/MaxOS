@@ -5,10 +5,10 @@ Handles process lifecycle (launch, track, kill) and hardware status.
 
 import os
 import signal
-import subprocess
+from typing import Any
+
 import psutil
 import structlog
-from typing import Dict, Any, Optional
 
 logger = structlog.get_logger("max_os.system")
 
@@ -16,7 +16,7 @@ class ProcessManager:
     """Manages external processes launched by MaxOS."""
     
     def __init__(self):
-        self.active_processes: Dict[str, int] = {} # Name -> PID
+        self.active_processes: dict[str, int] = {} # Name -> PID
         
     def track_process(self, name: str, pid: int):
         """Adds a process to the tracking list."""
@@ -41,7 +41,7 @@ class ProcessManager:
                 return False
         return False
 
-    def get_status(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_status(self, name: str) -> dict[str, Any] | None:
         """Gets resource usage for a tracked process."""
         if name in self.active_processes:
             pid = self.active_processes[name]
@@ -64,7 +64,7 @@ class SystemManager:
     def __init__(self):
         self.processes = ProcessManager()
         
-    def get_system_health(self) -> Dict[str, Any]:
+    def get_system_health(self) -> dict[str, Any]:
         """Returns global system resource usage."""
         return {
             "cpu_usage": psutil.cpu_percent(interval=1),
@@ -73,7 +73,7 @@ class SystemManager:
             "temp": self._get_temperature()
         }
         
-    def _get_temperature(self) -> Optional[float]:
+    def _get_temperature(self) -> float | None:
         """Placeholder for thermal monitoring."""
         try:
             temps = psutil.sensors_temperatures()
