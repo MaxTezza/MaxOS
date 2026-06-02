@@ -62,3 +62,4 @@ audit.log
 *.pid
 *.sock
 .agent_notes/
+test_kb/
