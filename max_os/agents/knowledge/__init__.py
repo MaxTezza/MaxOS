@@ -147,20 +147,36 @@ class KnowledgeAgent:
         within the knowledge base path.
         """
         relevant_chunks = []
+        query_lower = query.lower()
+        chunk_size = 1024 * 1024  # 1 MB
+        overlap = max(1024, len(query) * 2)
+
         for root, _, files in os.walk(self.knowledge_base_path):
             for file_name in files:
                 file_path = Path(root) / file_name
                 try:
-                    content = file_path.read_text()
-                    if query.lower() in content.lower():
-                        # Simple chunking: take a few lines around the keyword
-                        lines = content.splitlines()
-                        for i, line in enumerate(lines):
-                            if query.lower() in line.lower():
-                                start = max(0, i - 2)
-                                end = min(len(lines), i + 3)
-                                relevant_chunks.append("\n".join(lines[start:end]))
-                                break  # Only one chunk per file for simplicity
+                    with open(file_path, encoding="utf-8", errors="ignore") as f:
+                        buffer = ""
+                        while True:
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break
+                            buffer += chunk
+                            if query_lower in buffer.lower():
+                                # Simple chunking: take a few lines around the keyword
+                                extra = f.read(4096)  # read ahead slightly to not cut off end lines
+                                if extra:
+                                    buffer += extra
+                                lines = buffer.splitlines()
+                                for i, line in enumerate(lines):
+                                    if query_lower in line.lower():
+                                        start = max(0, i - 2)
+                                        end = min(len(lines), i + 3)
+                                        relevant_chunks.append("\n".join(lines[start:end]))
+                                        break  # Only one chunk per file for simplicity
+                                break  # Break out of while loop as we found our chunk for this file
+                            if len(buffer) > overlap:
+                                buffer = buffer[-overlap:]
                 except Exception:
                     # Ignore unreadable files
                     pass
