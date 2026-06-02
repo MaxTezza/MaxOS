@@ -5,20 +5,28 @@ Serves the Frontend and providing a WebSocket stream for real-time state.
 """
 
 import asyncio
-from typing import List, Dict, Any
+from typing import Any
+
 import structlog
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
 from max_os.utils.config import load_settings
 
 logger = structlog.get_logger("max_os.api")
 
 app = FastAPI(title="MaxOS Neural Link")
 
+# Load global settings manager
+settings_manager = load_settings()
+
+# Get allowed origins from settings or default to local development address
+allowed_origins = settings_manager.api.get("allowed_origins", ["http://localhost:3000"])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +35,7 @@ app.add_middleware(
 # --- WebSocket Manager ---
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -50,9 +58,6 @@ runner_ref = None
 def set_runner(runner):
     global runner_ref
     runner_ref = runner
-
-# Load global settings manager
-settings_manager = load_settings()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

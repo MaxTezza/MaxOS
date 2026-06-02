@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-import yaml
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
-from dotenv import load_dotenv
+
 import structlog
+import yaml
+from dotenv import load_dotenv
 
 load_dotenv()
 logger = structlog.get_logger("max_os.config")
@@ -25,6 +26,7 @@ class Settings:
     logging: dict[str, Any] = field(default_factory=dict)
     telemetry: dict[str, Any] = field(default_factory=dict)
     multi_agent: dict[str, Any] = field(default_factory=dict)
+    api: dict[str, Any] = field(default_factory=dict)
     
     # Phase 6: Accessibility & Control
     accessibility: dict[str, Any] = field(default_factory=lambda: {
@@ -52,7 +54,8 @@ class Settings:
         """Persists current state to YAML."""
         data = asdict(self)
         # Remove internal fields
-        if "_file_path" in data: del data["_file_path"]
+        if "_file_path" in data:
+            del data["_file_path"]
         
         try:
             with open(self._file_path, "w", encoding="utf-8") as f:
